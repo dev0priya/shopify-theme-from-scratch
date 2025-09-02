@@ -10,33 +10,51 @@
       </button>
     </div>
 
-    <div class="sidebar-drawer__content">
-      {% if cart.item_count > 0 %}
-        {% for item in cart.items %}
-          {% render 'side-cart', item: item %}
-        {% endfor %}
-      {% else %}
-        <p>Your cart is empty.</p>
-      {% endif %}
+    <div class="sidebar-drawer__content" data-cart-items-container>
+      {% comment %} JavaScript will fill this. {% endcomment %}
     </div>
 
-    {% if cart.item_count > 0 %}
-      <div class="sidebar-drawer__footer">
-        <div class="cart-summary">
-          <span>Subtotal:</span>
-          <span>{{ cart.total_price | money }}</span>
-        </div>
-        <div class="cart-summary">
-          <span>Shipping:</span>
-          <span>Free</span>
-        </div>
-        <div class="cart-summary total">
-          <span>Total:</span>
-          <span>{{ cart.total_price | money }}</span>
-        </div>
-        <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+    <div class="sidebar-drawer__footer" data-cart-footer>
+      <div class="cart-summary">
+        <span>Subtotal:</span>
+        <span data-cart-subtotal>{{ cart.total_price | money }}</span>
       </div>
-    {% endif %}
+      <div class="cart-summary">
+        <span>Shipping:</span>
+        <span>Free</span>
+      </div>
+      <div class="cart-summary total">
+        <span>Total:</span>
+        <span data-cart-total>{{ cart.total_price | money }}</span>
+      </div>
+      <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+    </div>
+
+    <template data-cart-item-template>
+      <div class="cart-item" data-cart-item-key="{KEY}">
+        <div class="cart-item__image">
+          <img src="{IMAGE_URL}" alt="{PRODUCT_TITLE}">
+        </div>
+        <div class="cart-item__details">
+          <p class="cart-item__title">{PRODUCT_TITLE}</p>
+          <p class="cart-item__price">{PRICE}</p>
+          <div class="cart-item__quantity">
+            <a href="#" class="quantity-btn minus" data-sweedesi-cart-minus>-</a>
+            <input type="number" value="{QUANTITY}" readonly>
+            {% comment %} The ONLY change is here: We changed the <a> tag to a <span> tag {% endcomment %}
+            <span class="quantity-btn plus" data-sweedesi-cart-plus style="cursor: pointer;">+</span>
+          </div>
+        </div>
+        <div class="cart-item__remove">
+          <a href="#" aria-label="Remove item" data-sweedesi-cart-remove>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="18" height="18">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </template>
+
   </div>
 </sidebar-drawer>
 
