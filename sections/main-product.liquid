@@ -9,21 +9,32 @@
           {% when 'title' %}
             <h1 class="product-title">{{ product.title }}</h1>
           {% when 'description' %}
-            <p class="product-description">{{ product.description }}</p>
+            <div class="product-description">{{ product.description }}</div>
           {% when 'price' %}
             <p class="product-price">{{ product.price | money }}</p>
           {% when 'add_to_cart' %}
-            {% form 'product', product %}
-              <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
-              <button type="submit" class="add-to-cart-btn">
-                {{ block.settings.add_to_cart_text }}
-              </button>
-            {% endform %}
+            <product-form
+                variant-id="{{ product.selected_or_first_available_variant.id }}"
+                product-handle="{{ product.handle }}"
+            >
+              <script type="application/json" id="product-variants-json">
+                {{ product.variants | json }}
+              </script>
+              {% form 'product', product %}
+                <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+                <button type="submit" class="add-to-cart">
+                 {{ block.settings.add_to_cart_text }}
+                </button>
+              {% endform %}
+            </product-form>
+            
         {% endcase %}
       {% endfor %}
     </div>
   </div>
 </div>
+
+<script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
 
 {% schema %}
 {
@@ -60,8 +71,7 @@
   "presets": [
     {
       "name": "Main Product",
-      "category": "Product",
-      
+      "category": "Product"
     }
   ]
 }
@@ -69,38 +79,30 @@
 
 {% stylesheet %}
 html, body {
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   overflow-x: hidden; /* Prevent horizontal scrolling */
 }
-
 .container {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  box-sizing: border-box;
-  padding: 0 16px;
+  box-sizing: border-box; padding: 0 16px;
 }
-
 .product-page {
   display: flex;
   flex-wrap: wrap; /* Allow wrapping on smaller screens */
   margin: 40px auto;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
   overflow: hidden;
 }
-
 .product-image {
   flex: 1;
   padding: 32px;
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   justify-content: center;
   background: #f7f7f7;
 }
-
 .product-image img {
   width: 100%;
   max-width: 400px;
@@ -108,90 +110,69 @@ html, body {
   border-radius: 8px;
   object-fit: cover; /* Ensure the image scales properly */
 }
-
 .product-details {
   flex: 1;
   padding: 32px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-}
-
+  justify-content: center; }
 .product-title {
   font-size: 2rem;
   margin-bottom: 16px;
   color: #333;
 }
-
 .product-price {
   font-size: 1.5rem;
   color: #2d2d2d;
-  margin-bottom: 24px;
-}
-
-.add-to-cart-btn {
+  margin-bottom: 24px; }
+.add-to-cart {
   padding: 12px 32px;
   background: #0070f3;
   color: #fff;
   border: none;
   border-radius: 4px;
   font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  cursor: pointer; transition: background 0.2s ease;
 }
-
-.add-to-cart-btn:hover {
+.add-to-cart:hover {
   background: #005bb5;
 }
-
+.add-to-cart[disabled] {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
 .product-description {
   margin-top: 16px;
   font-size: 1rem;
   color: #555;
-  line-height: 1.6;
-}
-
+  line-height: 1.6; }
 @media (max-width: 900px) {
   .product-page {
     flex-direction: column; /* Stack the image and details vertically */
   }
-
   .product-image {
-    padding: 16px;
-  }
-
+    padding: 16px; }
   .product-details {
     padding: 16px;
   }
-
   .product-title {
-    font-size: 1.8rem;
-  }
-
+    font-size: 1.8rem; }
   .product-price {
     font-size: 1.4rem;
   }
-
-  .add-to-cart-btn {
-    font-size: 0.9rem;
-    padding: 10px 24px;
+  .add-to-cart {
+    font-size: 0.9rem; padding: 10px 24px;
   }
 }
-
 @media (max-width: 600px) {
   .product-title {
-    font-size: 1.6rem;
-  }
-
+    font-size: 1.6rem; }
   .product-price {
     font-size: 1.2rem;
   }
-
-  .add-to-cart-btn {
-    font-size: 0.85rem;
-    padding: 8px 20px;
+  .add-to-cart {
+    font-size: 0.85rem; padding: 8px 20px;
   }
-
   .product-description {
     font-size: 0.9rem;
   }

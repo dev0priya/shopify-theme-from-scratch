@@ -32,12 +32,13 @@ function formatMoney(cents, format) {
  * Final Side Cart Logic
  */
 document.addEventListener('DOMContentLoaded', () => {
+  const sideCartElement = document.querySelector('sidebar-drawer');
   const container = document.querySelector('[data-cart-items-container]');
   const itemTemplate = document.querySelector('[data-cart-item-template]');
   const footer = document.querySelector('[data-cart-footer]');
   const subtotalEl = document.querySelector('[data-cart-subtotal]');
   const totalEl = document.querySelector('[data-cart-total]');
-  const cartCountBubble = document.querySelector('#header-cart-icon .cart-count-bubble'); // Adjust selector if needed
+  const cartCountBubble = document.querySelector('#header-cart-icon .cart-count-bubble'); 
 
   async function getCart() {
     const response = await fetch('/cart.js');
@@ -86,13 +87,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentQuantity = parseInt(cartItem.querySelector('input[type="number"]').value);
     let newQuantity;
 
-    if (target.closest('[data-sweedesi-cart-plus]')) { // Using new unique name
+    if (target.closest('[data-sweedesi-cart-plus]')) {
       event.preventDefault();
       newQuantity = currentQuantity + 1;
-    } else if (target.closest('[data-sweedesi-cart-minus]')) { // Using new unique name
+    } else if (target.closest('[data-sweedesi-cart-minus]')) {
       event.preventDefault();
       newQuantity = currentQuantity - 1;
-    } else if (target.closest('[data-sweedesi-cart-remove]')) { // Using new unique name
+    } else if (target.closest('[data-sweedesi-cart-remove]')) {
       event.preventDefault();
       newQuantity = 0;
     }
@@ -105,9 +106,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Refreshes cart content when cart icon is clicked
   document.body.addEventListener('click', (e) => {
-    if (e.target.closest('a[href="/cart"]')) {
+    if (e.target.closest('a[href="/cart"]') || e.target.closest('[data-open-cart]')) {
       getCart().then(renderCart);
     }
   });
+
+  // Listens for the signal to refresh the cart content
+  document.body.addEventListener('cart:updated', () => {
+    console.log('Cart was updated! Refreshing side cart.');
+    getCart().then(renderCart);
+  });
+
+  // Listens for the signal to open the side cart
+  document.body.addEventListener('cart:open', () => {
+    console.log('Received signal to open the side cart.');
+    if (sideCartElement) {
+      sideCartElement.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+  });
+
 });
