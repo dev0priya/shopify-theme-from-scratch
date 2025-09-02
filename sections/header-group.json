@@ -1,0 +1,37 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "type": "header",
+  "name": "Header Group",
+  "sections": {
+    "header": {
+      "type": "header",
+      "settings": {}
+    },
+    "announcement_bar_HHBkxP": {
+      "type": "announcement-bar",
+      "name": "Announcement Bar",
+      "settings": {
+        "announcement_text": "Welcome to our Damroo Collections!",
+        "background_color": "#000000ff",
+        "text_color": "#ffffff"
+      }
+    },
+    "side-cart": {
+      "type": "sidebar",
+      "settings": {}
+    }
+  },
+  "order": [
+    "announcement_bar_HHBkxP",
+    "header",
+    "side-cart"
+  ]
+}

@@ -1,0 +1,199 @@
+<div class="container">
+  <div class="product-page">
+    <div class="product-image">
+      <img src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ product.title }}">
+    </div>
+    <div class="product-details">
+      {% for block in section.blocks %}
+        {% case block.type %}
+          {% when 'title' %}
+            <h1 class="product-title">{{ product.title }}</h1>
+          {% when 'description' %}
+            <p class="product-description">{{ product.description }}</p>
+          {% when 'price' %}
+            <p class="product-price">{{ product.price | money }}</p>
+          {% when 'add_to_cart' %}
+            {% form 'product', product %}
+              <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+              <button type="submit" class="add-to-cart-btn">
+                {{ block.settings.add_to_cart_text }}
+              </button>
+            {% endform %}
+        {% endcase %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Main Product",
+  "blocks": [
+    {
+      "type":"@app"
+    },
+    {
+      "type": "title",
+      "name": "Title"
+    },
+    {
+      "type": "description",
+      "name": "Description"
+    },
+    {
+      "type": "price",
+      "name": "Price"
+    },
+    {
+      "type": "add_to_cart",
+      "name": "Add to Cart Button",
+      "settings": [
+        {
+          "type": "text",
+          "id": "add_to_cart_text",
+          "label": "Add to Cart Button Text",
+          "default": "Add to Cart"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Main Product",
+      "category": "Product",
+      
+    }
+  ]
+}
+{% endschema %}
+
+{% stylesheet %}
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
+}
+
+.product-page {
+  display: flex;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+
+.product-image {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f7f7;
+}
+
+.product-image img {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover; /* Ensure the image scales properly */
+}
+
+.product-details {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.product-title {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.product-price {
+  font-size: 1.5rem;
+  color: #2d2d2d;
+  margin-bottom: 24px;
+}
+
+.add-to-cart-btn {
+  padding: 12px 32px;
+  background: #0070f3;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.add-to-cart-btn:hover {
+  background: #005bb5;
+}
+
+.product-description {
+  margin-top: 16px;
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .product-page {
+    flex-direction: column; /* Stack the image and details vertically */
+  }
+
+  .product-image {
+    padding: 16px;
+  }
+
+  .product-details {
+    padding: 16px;
+  }
+
+  .product-title {
+    font-size: 1.8rem;
+  }
+
+  .product-price {
+    font-size: 1.4rem;
+  }
+
+  .add-to-cart-btn {
+    font-size: 0.9rem;
+    padding: 10px 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .product-title {
+    font-size: 1.6rem;
+  }
+
+  .product-price {
+    font-size: 1.2rem;
+  }
+
+  .add-to-cart-btn {
+    font-size: 0.85rem;
+    padding: 8px 20px;
+  }
+
+  .product-description {
+    font-size: 0.9rem;
+  }
+}
+{% endstylesheet %}

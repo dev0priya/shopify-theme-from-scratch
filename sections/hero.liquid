@@ -1,0 +1,171 @@
+<div class="hero-section" style="background-image: url('{{ section.settings.hero_image | image_url: width: 1920 }}'); height: {{ section.settings.hero_height }};">
+  <div class="hero-content hero-position-{{ section.settings.hero_text_position }}">
+    <h1 class="hero-title">{{ section.settings.hero_title }}</h1>
+    <p class="hero-subtitle">{{ section.settings.hero_subtitle }}</p>
+    {% if section.settings.hero_button_text != blank %}
+      <a href="{{ section.settings.hero_button_link }}" class="hero-button">{{ section.settings.hero_button_text }}</a>
+    {% endif %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Hero Section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "hero_title",
+      "label": "Hero Title",
+      "default": "Welcome to Our Store"
+    },
+    {
+      "type": "textarea",
+      "id": "hero_subtitle",
+      "label": "Hero Subtitle",
+      "default": "Discover the best products at unbeatable prices."
+    },
+    {
+      "type": "image_picker",
+      "id": "hero_image",
+      "label": "Hero Background Image"
+    },
+    {
+      "type": "text",
+      "id": "hero_button_text",
+      "label": "Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "hero_button_link",
+      "label": "Button Link",
+      "default": "/collections/all"
+    },
+    {
+      "type": "select",
+      "id": "hero_text_position",
+      "label": "Text Box Position",
+      "default": "center",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" },
+        { "value": "bottom", "label": "Bottom" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "hero_height",
+      "label": "Hero Section Height",
+      "default": "100vh",
+      "info": "Specify the height of the hero section (e.g., 100vh, 500px, etc.)."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero Section",
+      "category": "General"
+    }
+  ]
+}
+{% endschema %}
+
+{% stylesheet %}
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-content {
+  position: absolute;
+  max-width: 600px;
+  text-align: center;
+  color: #fff;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background for better readability */
+  border-radius: 8px;
+}
+
+.hero-position-left {
+  left: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.hero-position-center {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.hero-position-right {
+  right: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: right;
+}
+
+.hero-position-bottom {
+  left: 50%;
+  bottom: 10%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.hero-button {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: #0070f3;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.hero-button:hover {
+  background-color: #005bb5;
+}
+
+@media (max-width: 900px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .hero-content {
+    max-width: 90%;
+  }
+}
+{% endstylesheet %}

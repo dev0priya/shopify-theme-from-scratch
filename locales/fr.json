@@ -1,0 +1,16 @@
+{
+  "cart": {
+    "title": "Votre panier",
+    "product": "Produit",
+    "quantity": "Quantité",
+    "price": "Prix",
+    "total": "Totale",
+    "remove": "Retirer",
+    "subtotal": "Total",
+    "continue_shopping": "Continuer vos achats",
+    "update_cart": "Mettre à jour le panier",
+    "checkout": "Vérifier",
+    "empty_title": "Votre panier est vide",
+    "empty_message": "Il semble que vous n'ayez encore rien ajouté."
+  }
+}

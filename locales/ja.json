@@ -1,0 +1,16 @@
+{
+  "cart": {
+    "title": "あなたのカート",
+    "product": "製品",
+    "quantity": "量",
+    "price": "価格",
+    "total": "合計",
+    "remove": "取り除く",
+    "subtotal": "小計",
+    "continue_shopping": "買い物を続ける",
+    "update_cart": "カートを更新する",
+    "checkout": "チェックアウト",
+    "empty_title": "カートは空です",
+    "empty_message": "まだ何も追加されていないようです。"
+  }
+}

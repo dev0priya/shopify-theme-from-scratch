@@ -1,0 +1,148 @@
+<h1 class="collection-title">{{ collection.title }}</h1>
+<div class="container">
+  <div class="collection-grid">
+    {% for product in collection.products %}
+      <div class="collection-product-card">
+        <a href="{{ product.url }}">
+          <img src="{{ product.featured_image | image_url: width: 400 }}" alt="{{ product.title }}" class="product-image" />
+        </a>
+        <div class="product-info-left">
+          <h2 class="product-title">{{ product.title }}</h2>
+          <p class="product-price">{{ product.price | money }}</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+/* Prevent horizontal scrolling */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
+}
+
+.collection-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 40px 0 32px 0;
+  color: #223;
+  text-align: center;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+  gap: 32px;
+  width: 100%; /* Ensure the grid fits within the container */
+  box-sizing: border-box;
+}
+
+.collection-product-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(40, 60, 90, 0.10);
+  padding: 28px 18px 22px 18px;
+  text-align: center; /* Center content horizontally */
+  transition: box-shadow 0.25s, transform 0.18s;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  justify-content: center; /* Center content vertically */
+  min-height: 400px; /* Ensure consistent height */
+  box-sizing: border-box;
+  cursor: pointer;
+  overflow: hidden; /* Prevent content from overflowing the box */
+  position: relative; /* Ensure proper positioning for child elements */
+}
+
+.collection-product-card:hover {
+  box-shadow: 0 8px 32px rgba(40, 60, 90, 0.18);
+  transform: translateY(-6px) scale(1.03);
+}
+
+.product-image {
+  width: 100%; /* Set the image width to fill the container */
+  height: 300px; /* Set a fixed height for all images */
+  object-fit: cover; /* Crop the image to fit the dimensions while maintaining aspect ratio */
+  object-position: center; /* Center the image within the box */
+  border-radius: 8px; /* Optional: Add rounded corners */
+  margin: 0 auto; /* Center the image horizontally */
+  background: #f7f7f7; /* Optional: Add a background color */
+  display: block; /* Ensure the image is treated as a block element */
+  box-shadow: 0 2px 8px rgba(40, 60, 90, 0.07); /* Optional: Add a shadow for styling */
+  transition: box-shadow 0.2s; /* Optional: Add a hover effect */
+}
+
+.collection-product-card:hover .product-image {
+  box-shadow: 0 6px 24px rgba(40, 60, 90, 0.13);
+}
+
+.product-info-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center text horizontally */
+  margin-top: 6px;
+}
+
+.product-title {
+  font-size: 1.18rem;
+  font-weight: 600;
+  color: #223;
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+  text-align: center; /* Center text */
+}
+
+.product-price {
+  font-size: 1.08rem;
+  color: #222;
+  font-weight: 700;
+  margin-bottom: 0;
+  text-align: center; /* Center text */
+}
+
+@media (max-width: 900px) {
+  .collection-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjust grid for smaller screens */
+    gap: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .collection-grid {
+    grid-template-columns: 1fr; /* Single column on very small screens */
+    gap: 16px;
+  }
+  .product-image {
+    width: auto; /* Ensure the image scales properly on smaller screens */
+    max-width: 100%; /* Ensure the image does not exceed the card's width */
+    height: 200px; /* Adjust height for smaller screens */
+  }
+  .collection-product-card {
+    min-height: 380px;
+  }
+}
+</style>
+
+{% schema %}
+{
+  "name": "Main Collection",
+  "settings": [],
+  "presets": [
+    {
+      "name": "Main Collection",
+      "category": "Collection"
+    }
+  ]
+}
+{% endschema %}

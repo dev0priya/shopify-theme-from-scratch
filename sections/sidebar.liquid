@@ -1,0 +1,48 @@
+<sidebar-drawer>
+  <div class="sidebar-overlay"></div>
+  <div class="sidebar-drawer__container">
+    <div class="sidebar-drawer__header">
+      <h3>Your Cart</h3>
+      <button class="sidebar-drawer__close-btn" aria-label="Close cart">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="sidebar-drawer__content">
+      {% if cart.item_count > 0 %}
+        {% for item in cart.items %}
+          {% render 'side-cart', item: item %}
+        {% endfor %}
+      {% else %}
+        <p>Your cart is empty.</p>
+      {% endif %}
+    </div>
+
+    {% if cart.item_count > 0 %}
+      <div class="sidebar-drawer__footer">
+        <div class="cart-summary">
+          <span>Subtotal:</span>
+          <span>{{ cart.total_price | money }}</span>
+        </div>
+        <div class="cart-summary">
+          <span>Shipping:</span>
+          <span>Free</span>
+        </div>
+        <div class="cart-summary total">
+          <span>Total:</span>
+          <span>{{ cart.total_price | money }}</span>
+        </div>
+        <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+      </div>
+    {% endif %}
+  </div>
+</sidebar-drawer>
+
+{% schema %}
+{
+  "name": "Side Cart Drawer",
+  "settings": []
+}
+{% endschema %}

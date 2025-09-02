@@ -1,0 +1,58 @@
+<a href="{{ block.settings.button_link }}" class="button" style="background-color: {{ block.settings.button_color }}; color: {{ block.settings.text_color }};">
+  {{ block.settings.button_text }}
+</a>
+
+{% schema %}
+{
+  "name": "Button Block",
+  "settings": [
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Click Me"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button Link",
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button Background Color",
+      "default": "#0070f3"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    }
+  ],
+    "presets": [
+        {
+        "name": "Custom Button",
+        "category": "Custom"
+        }
+    ]
+}
+{% endschema %}
+
+{% stylesheet %}
+.custom-button {
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+
+.custom-button:hover {
+  opacity: 0.9;
+}
+{% endstylesheet %}

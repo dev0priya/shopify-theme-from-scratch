@@ -1,0 +1,135 @@
+<div class="featured-collection">
+  <h2 class="featured-collection-title">{{ section.settings.collection_title | default: featured_collection.tittle}}</h2>
+  <div class="featured-collection-grid">
+    {% if collections[section.settings.collection].products.size > 0 %}
+      {% for product in collections[section.settings.collection].products %}
+        <div class="featured-collection-item">
+          <a href="{{ product.url }}" class="product-link">
+            <img src="{{ product.featured_image | image_url: width: 400 }}" alt="{{ product.title }}" class="product-image" />
+            <h3 class="product-title">{{ product.title }}</h3>
+            <p class="product-price">{{ product.price | money }}</p>
+          </a>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No products found in this collection.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Featured Collection",
+  "settings": [
+    {
+      "type": "text",
+      "id": "collection_title",
+      "label": "Collection Title",
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Select Collection"
+    },
+    {
+      "type": "number",
+      "id": "products_to_show",
+      "label": "number of products to show",
+      "default": 4
+    },
+  ],
+  "presets": [
+    {
+      "name": "Featured Collection",
+      "category": "General"
+    }
+  ]
+}
+{% endschema %}
+
+<style>
+.featured-collection {
+  padding: 40px 20px;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+.featured-collection-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #222;
+}
+
+.featured-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.featured-collection-item {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  height: 450px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* Prevent content from overflowing */
+}
+
+.featured-collection-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.product-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product-image {
+  width: 100%; /* Set a fixed width */
+  height: 300px; /* Set a fixed height to make it square */
+  object-fit: cover; /* Crop the image to fit the dimensions while maintaining aspect ratio */
+  object-position: center; /* Center the image within the box */
+  border-radius: 6px; /* Optional: Add rounded corners */
+  margin-bottom: 10px;
+  display: block;
+  align-self: center; /* Center the image horizontally */
+}
+
+.product-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.product-price {
+  font-size: 0.9rem;
+  color: #0070f3;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .featured-collection-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .featured-collection-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

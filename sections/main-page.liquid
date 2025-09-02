@@ -1,0 +1,51 @@
+<div class="container">
+  <div class="page-content">
+    <h1 class="page-title">{{ page.title }}</h1>
+    <div class="page-body">
+      {{ page.content }}
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+    "name": "Main Page",
+    "settings": [],
+    "presets": [
+        {
+        "name": "Main Page",
+        }
+    ]
+}
+{% endschema %}
+
+<style>
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
+  flex-wrap: wrap; /* Allow items to wrap to the next line */
+}
+.page-content {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(40,60,90,0.07);
+  padding: 40px 32px;
+  margin: 40px 0;
+}
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #223;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.page-body {
+  font-size: 1.08rem;
+  color: #222;
+  line-height: 1.7;
+}
+</style>
+

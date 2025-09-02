@@ -1,0 +1,21 @@
+<div class="cart-item">
+  <div class="cart-item__image">
+    <img src="{{ item.image | img_url: 'medium' }}" alt="{{ item.product.title | escape }}">
+  </div>
+  <div class="cart-item__details">
+    <p class="cart-item__title">{{ item.product.title }}</p>
+    <p class="cart-item__price">{{ item.final_price | money }}</p>
+    <div class="cart-item__quantity">
+      <a href="/cart/change?line={{ forloop.index }}&quantity={{ item.quantity | minus: 1 }}" class="quantity-btn minus">-</a>
+      <input type="number" value="{{ item.quantity }}" readonly>
+      <a href="/cart/change?line={{ forloop.index }}&quantity={{ item.quantity | plus: 1 }}" class="quantity-btn plus">+</a>
+    </div>
+  </div>
+  <div class="cart-item__remove">
+    <a href="/cart/change?line={{ forloop.index }}&quantity=0" aria-label="Remove item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="18" height="18">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </a>
+  </div>
+</div>
