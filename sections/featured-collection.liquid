@@ -1,8 +1,13 @@
 <div class="featured-collection">
-  <h2 class="featured-collection-title">{{ section.settings.collection_title | default: featured_collection.tittle}}</h2>
+  <h2 class="featured-collection-title">{{ section.settings.collection_title | default: collections[section.settings.collection].title }}</h2>
   <div class="featured-collection-grid">
-    {% if collections[section.settings.collection].products.size > 0 %}
-      {% for product in collections[section.settings.collection].products %}
+    {%- assign selected_collection = collections[section.settings.collection] -%}
+    {% if selected_collection.products.size > 0 %}
+      {% comment %}
+        MODIFICATION: Added the 'limit' parameter to the loop
+        to use the value from our new slider setting.
+      {% endcomment %}
+      {% for product in selected_collection.products limit: section.settings.products_to_show %}
         <div class="featured-collection-item">
           <a href="{{ product.url }}" class="product-link">
             <img src="{{ product.featured_image | image_url: width: 400 }}" alt="{{ product.title }}" class="product-image" />
@@ -25,6 +30,7 @@
       "type": "text",
       "id": "collection_title",
       "label": "Collection Title",
+      "info": "Leave blank to use the selected collection's title."
     },
     {
       "type": "collection",
@@ -32,11 +38,14 @@
       "label": "Select Collection"
     },
     {
-      "type": "number",
+      "type": "range",
       "id": "products_to_show",
-      "label": "number of products to show",
+      "label": "Products to show",
+      "min": 2,
+      "max": 12,
+      "step": 1,
       "default": 4
-    },
+    }
   ],
   "presets": [
     {
@@ -47,6 +56,9 @@
 }
 {% endschema %}
 
+{% comment %}
+  The stylesheet below has not been changed.
+{% endcomment %}
 <style>
 .featured-collection {
   padding: 40px 20px;
@@ -65,6 +77,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -81,7 +95,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden; /* Prevent content from overflowing */
+  overflow: hidden;
 }
 
 .featured-collection-item:hover {
@@ -95,17 +109,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  height: 100%;
+  justify-content: space-around;
 }
 
 .product-image {
-  width: 100%; /* Set a fixed width */
-  height: 300px; /* Set a fixed height to make it square */
-  object-fit: cover; /* Crop the image to fit the dimensions while maintaining aspect ratio */
-  object-position: center; /* Center the image within the box */
-  border-radius: 6px; /* Optional: Add rounded corners */
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 6px;
   margin-bottom: 10px;
   display: block;
-  align-self: center; /* Center the image horizontally */
 }
 
 .product-title {

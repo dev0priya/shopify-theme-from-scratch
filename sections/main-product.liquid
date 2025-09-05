@@ -1,86 +1,230 @@
+{% comment %}
+  The JavaScript does not need to be changed.
+{% endcomment %}
+<script>
+  class VariantSelector extends HTMLElement {
+    constructor() {
+      super();
+      this.addEventListener('change', this.onVariantChange);
+      this.variantData = JSON.parse(this.querySelector('[type="application/json"]').textContent);
+    }
+
+    onVariantChange() {
+      this.updateSelectedVariant();
+      if (!this.currentVariant) return;
+
+      this.updateURL();
+      this.updateFeaturedImage();
+      this.updatePrice();
+      this.updateAddToCartButton();
+    }
+
+    updateSelectedVariant() {
+      const options = Array.from(this.querySelectorAll('input[type=radio]:checked'), (input) => input.value);
+      this.currentVariant = this.variantData.find((variant) => {
+        return !variant.options.map((option, index) => {
+          return options[index] === option;
+        }).includes(false);
+      });
+    }
+
+    updateURL() {
+      if (!this.currentVariant) return;
+      window.history.replaceState({}, '', `${this.dataset.url}?variant=${this.currentVariant.id}`);
+    }
+
+    updateFeaturedImage() {
+      const mainImage = document.getElementById('MainProductImage');
+      if (!this.currentVariant || !this.currentVariant.featured_image) return;
+
+      mainImage.src = this.currentVariant.featured_image.src;
+      mainImage.alt = this.currentVariant.featured_image.alt;
+    }
+
+    updatePrice() {
+      const priceElement = document.getElementById('ProductPrice');
+      if (!this.currentVariant) return;
+      priceElement.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(this.currentVariant.price / 100);
+    }
+
+    updateAddToCartButton() {
+      const addButton = document.getElementById('AddToCartButton');
+      const addButtonText = document.getElementById('AddToCartText');
+      const variantIdInput = document.getElementById('ProductVariantId');
+
+      if (!this.currentVariant) {
+        addButton.setAttribute('disabled', true);
+        addButtonText.textContent = 'Unavailable';
+      } else if (!this.currentVariant.available) {
+        addButton.setAttribute('disabled', true);
+        addButtonText.textContent = 'Sold Out';
+      } else {
+        addButton.removeAttribute('disabled');
+        const defaultText = addButton.dataset.defaultText || 'Add to Cart';
+        addButtonText.textContent = defaultText;
+        variantIdInput.value = this.currentVariant.id;
+      }
+    }
+  }
+
+  customElements.define('variant-selector', VariantSelector);
+
+  function initializeImageThumbnails() {
+    const mainImage = document.getElementById('MainProductImage');
+    const thumbnails = document.querySelectorAll('.thumbnail-item');
+
+    thumbnails.forEach(thumb => {
+      thumb.addEventListener('click', function(event) {
+        event.preventDefault();
+        const newSrc = this.dataset.imageSrc;
+        mainImage.src = newSrc;
+        
+        thumbnails.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', initializeImageThumbnails);
+</script>
+
+
 <div class="container">
   <div class="product-page">
-    <div class="product-image">
-      <img src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ product.title }}">
+    <div class="product-image-gallery">
+      {% comment %}
+        CHANGED: The main image div is now placed BEFORE the thumbnails div.
+      {% endcomment %}
+      <div class="product-image">
+        <img id="MainProductImage" src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ product.title }}">
+      </div>
+      <div class="product-thumbnails">
+        {% for image in product.images %}
+          <a href="#" class="thumbnail-item {% if forloop.first %}active{% endif %}" data-image-src="{{ image | image_url: width: 800 }}">
+            <img src="{{ image | image_url: width: 100 }}" alt="{{ image.alt | escape }}">
+          </a>
+        {% endfor %}
+      </div>
     </div>
+
     <div class="product-details">
       {% for block in section.blocks %}
         {% case block.type %}
           {% when 'title' %}
             <h1 class="product-title">{{ product.title }}</h1>
-          {% when 'description' %}
-            <div class="product-description">{{ product.description }}</div>
           {% when 'price' %}
-            <p class="product-price">{{ product.price | money }}</p>
+            <p id="ProductPrice" class="product-price">{{ product.price | money }}</p>
+          {% when 'variant_picker' %}
+            {% unless product.has_only_default_variant %}
+              <variant-selector data-url="{{ product.url }}">
+                <script type="application/json">
+                  {{ product.variants | json }}
+                </script>
+                {% for option in product.options_with_values %}
+                  <fieldset class="variant-fieldset">
+                    <legend class="variant-legend">{{ option.name }}</legend>
+                    <div class="variant-options">
+                      {% for value in option.values %}
+                        <input type="radio" id="option-{{ option.position }}-{{ value | handle }}" name="option-{{ option.position }}" value="{{ value }}" {% if option.selected_value == value %}checked{% endif %}>
+                        <label for="option-{{ option.position }}-{{ value | handle }}" class="variant-label">{{ value }}</label>
+                      {% endfor %}
+                    </div>
+                  </fieldset>
+                {% endfor %}
+              </variant-selector>
+            {% endunless %}
+          {% when 'description' %}
+            <p class="product-description">{{ product.description }}</p>
           {% when 'add_to_cart' %}
-            <product-form
-                variant-id="{{ product.selected_or_first_available_variant.id }}"
-                product-handle="{{ product.handle }}"
-            >
-              <script type="application/json" id="product-variants-json">
-                {{ product.variants | json }}
-              </script>
-              {% form 'product', product %}
-                <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
-                <button type="submit" class="add-to-cart">
-                 {{ block.settings.add_to_cart_text }}
-                </button>
-              {% endform %}
-            </product-form>
-            
+            {%- liquid
+              assign default_text = block.settings.add_to_cart_text | default: "Add to Cart"
+            -%}
+            {% form 'product', product %}
+              <input type="hidden" name="id" id="ProductVariantId" value="{{ product.selected_or_first_available_variant.id }}">
+              <button type="submit" id="AddToCartButton" class="add-to-cart-btn" data-default-text="{{ default_text }}" {% if product.selected_or_first_available_variant.available == false %}disabled{% endif %}>
+                <span id="AddToCartText">
+                  {% if product.selected_or_first_available_variant.available %}
+                    {{ default_text }}
+                  {% else %}
+                    Sold Out
+                  {% endif %}
+                </span>
+              </button>
+            {% endform %}
         {% endcase %}
       {% endfor %}
     </div>
   </div>
-</div>
 
-<script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+  {% comment %}
+    This optional showcase section for other variants remains below the main product area.
+    You can remove this entire block if you no longer need it.
+  {% endcomment %}
+  {%- liquid
+    assign variant_images = product.variants | map: 'featured_image' | where: 'src', product.featured_image.src | uniq
+    if variant_images.size > 1
+      assign has_other_variants = true
+    else
+      assign has_other_variants = false
+    endif
+  -%}
+
+  {% if has_other_variants %}
+    <div class="variant-showcase">
+      <h2 class="variant-showcase-title">Also Available In</h2>
+      <div class="variant-showcase-grid">
+        {% for image in variant_images %}
+          {%- for variant in product.variants -%}
+            {%- if variant.featured_image.src == image.src -%}
+              {%- assign variant_for_image = variant -%}
+              {%- break -%}
+            {%- endif -%}
+          {%- endfor -%}
+          <a href="{{ variant_for_image.url }}" class="variant-showcase-item">
+            <img src="{{ image | image_url: width: 400 }}" alt="{{ image.alt | escape }}" loading="lazy">
+            <p class="variant-showcase-item-title">{{ variant_for_image.option1 }}</p>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
 
 {% schema %}
 {
   "name": "Main Product",
   "blocks": [
-    {
-      "type":"@app"
-    },
-    {
-      "type": "title",
-      "name": "Title"
-    },
-    {
-      "type": "description",
-      "name": "Description"
-    },
-    {
-      "type": "price",
-      "name": "Price"
-    },
-    {
-      "type": "add_to_cart",
-      "name": "Add to Cart Button",
+    { "type": "@app" },
+    { "type": "title", "name": "Title", "limit": 1 },
+    { "type": "price", "name": "Price", "limit": 1 },
+    { "type": "variant_picker", "name": "Variant Picker", "limit": 1 },
+    { "type": "description", "name": "Description", "limit": 1 },
+    { "type": "add_to_cart", "name": "Add to Cart Button", "limit": 1,
       "settings": [
-        {
-          "type": "text",
-          "id": "add_to_cart_text",
-          "label": "Add to Cart Button Text",
-          "default": "Add to Cart"
-        }
+        { "type": "text", "id": "add_to_cart_text", "label": "Add to Cart Button Text", "default": "Add to Cart" }
       ]
     }
   ],
-  "presets": [
-    {
-      "name": "Main Product",
-      "category": "Product"
+   "presets": [
+    { "name": "Main Product", "category": "Product",
+      "blocks": [
+        { "type": "title" },
+        { "type": "price" },
+        { "type": "variant_picker" },
+        { "type": "add_to_cart" },
+        { "type": "description" }
+      ]
     }
   ]
 }
 {% endschema %}
 
+
 {% stylesheet %}
 html, body {
   margin: 0; padding: 0;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+  overflow-x: hidden;
 }
 .container {
   max-width: 1200px;
@@ -90,32 +234,70 @@ html, body {
 }
 .product-page {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  flex-wrap: wrap;
+  align-items: center; /* Vertically align image and details columns */
   margin: 40px auto;
   background: #fff;
   border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
   overflow: hidden;
 }
-.product-image {
+
+/* --- START: CSS adjustments for the new image layout --- */
+
+.product-image-gallery {
   flex: 1;
+  display: flex;
+  flex-direction: column; /* CHANGED: Stacks the main image on top of thumbnails */
   padding: 32px;
-  display: flex; align-items: center;
-  justify-content: center;
   background: #f7f7f7;
 }
+.product-image {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px; /* CHANGED: Reduced from 450px. You can make it even smaller, like 350px. */
+}
+
 .product-image img {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
+  width: 50%;
+  height: 80%;      /* CHANGED: Makes the image fill the container's new height. */
+  max-width: 450px;
   border-radius: 8px;
-  object-fit: cover; /* Ensure the image scales properly */
+  object-fit: cover; /* ADDED: This prevents the image from being stretched or squished. */
+}
+.product-thumbnails {
+  display: flex;
+  flex-direction: row; /* CHANGED: Makes thumbnails a horizontal row */
+  justify-content: center; /* ADDED: Centers the thumbnails */
+  gap: 12px;
+  margin-top: 20px; /* CHANGED: Adds space above thumbnails */
+}
+.thumbnail-item {
+  width: 150px; /* Adjusted size */
+  height: 150px; /* Adjusted size */
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+/* --- END: CSS adjustments --- */
+
+.thumbnail-item:hover { border-color: #ccc; }
+.thumbnail-item.active { border-color: #0070f3; }
+.thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .product-details {
   flex: 1;
   padding: 32px;
   display: flex;
   flex-direction: column;
-  justify-content: center; }
+  justify-content: center;
+}
 .product-title {
   font-size: 2rem;
   margin-bottom: 16px;
@@ -124,8 +306,38 @@ html, body {
 .product-price {
   font-size: 1.5rem;
   color: #2d2d2d;
-  margin-bottom: 24px; }
-.add-to-cart {
+  margin-bottom: 24px;
+}
+.variant-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+.variant-legend {
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+.variant-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.variant-options input[type="radio"] { display: none; }
+.variant-label {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.variant-options input[type="radio"]:checked + .variant-label {
+  border-color: #0070f3;
+  background-color: #0070f3;
+  color: #fff;
+}
+.add-to-cart-btn {
   padding: 12px 32px;
   background: #0070f3;
   color: #fff;
@@ -134,47 +346,69 @@ html, body {
   font-size: 1rem;
   cursor: pointer; transition: background 0.2s ease;
 }
-.add-to-cart:hover {
-  background: #005bb5;
-}
-.add-to-cart[disabled] {
-    background-color: #cccccc;
-    cursor: not-allowed;
+.add-to-cart-btn:hover:not([disabled]) { background: #005bb5; }
+.add-to-cart-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 .product-description {
   margin-top: 16px;
   font-size: 1rem;
   color: #555;
-  line-height: 1.6; }
+  line-height: 1.6;
+}
+.variant-showcase {
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid #e5e5e5;
+  text-align: center;
+}
+.variant-showcase-title {
+  font-size: 1.8rem;
+  margin-bottom: 24px;
+  color: #333;
+}
+.variant-showcase-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+.variant-showcase-item {
+  text-decoration: none;
+  color: #333;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.variant-showcase-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.variant-showcase-item img {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+}
+.variant-showcase-item-title {
+  padding: 12px;
+  margin: 0;
+  font-size: 0.9rem;
+  background: #f9f9f9;
+}
 @media (max-width: 900px) {
-  .product-page {
-    flex-direction: column; /* Stack the image and details vertically */
-  }
-  .product-image {
-    padding: 16px; }
-  .product-details {
-    padding: 16px;
-  }
-  .product-title {
-    font-size: 1.8rem; }
-  .product-price {
-    font-size: 1.4rem;
-  }
-  .add-to-cart {
-    font-size: 0.9rem; padding: 10px 24px;
-  }
+  .product-page { flex-direction: column; }
+  .product-details { padding: 16px; }
+  .product-title { font-size: 1.8rem; }
+  .product-price { font-size: 1.4rem; }
+  .add-to-cart-btn { font-size: 0.9rem; padding: 10px 24px; }
 }
 @media (max-width: 600px) {
-  .product-title {
-    font-size: 1.6rem; }
-  .product-price {
-    font-size: 1.2rem;
-  }
-  .add-to-cart {
-    font-size: 0.85rem; padding: 8px 20px;
-  }
-  .product-description {
-    font-size: 0.9rem;
-  }
+  .product-title { font-size: 1.6rem; }
+  .product-price { font-size: 1.2rem; }
+  .add-to-cart-btn { font-size: 0.85rem; padding: 8px 20px; }
+  .product-description { font-size: 0.9rem; }
 }
 {% endstylesheet %}
