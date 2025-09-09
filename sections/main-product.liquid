@@ -301,7 +301,7 @@ html, body {
   flex-direction: column; /* CHANGED: Stacks the main image on top of thumbnails */
   padding: 32px;
   background: #f7f7f7;
-  height: 600px;
+  height: 500px;
 }
 .product-image {
   flex: 1;
@@ -325,15 +325,7 @@ html, body {
   gap: 12px;
   margin-top: 20px; /* CHANGED: Adds space above thumbnails */
 }
-.thumbnail-item {
-  width: 150px; /* Adjusted size */
-  height: 150px; /* Adjusted size */
-  border: 2px solid transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: border-color 0.2s ease;
-}
+
 /* --- END: CSS adjustments --- */
 
 .thumbnail-item:hover { border-color: #ccc; }
@@ -342,6 +334,15 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.thumbnail-item {
+    width: 80px;
+    height: 80px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color .2s ease;
 }
 .product-details {
   flex: 1;
