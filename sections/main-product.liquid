@@ -1,5 +1,7 @@
 {% comment %}
-  The JavaScript does not need to be changed.
+  This section contains the JavaScript that powers the product page.
+  The main 'VariantSelector' class handles updating the product image, price,
+  and add-to-cart button when a new color swatch is selected.
 {% endcomment %}
 <script>
   class VariantSelector extends HTMLElement {
@@ -66,38 +68,15 @@
   }
 
   customElements.define('variant-selector', VariantSelector);
-
-  function initializeImageThumbnails() {
-    const mainImage = document.getElementById('MainProductImage');
-    const thumbnails = document.querySelectorAll('.thumbnail-item');
-    thumbnails.forEach(thumb => {
-      thumb.addEventListener('click', function(event) {
-        event.preventDefault();
-        const newSrc = this.dataset.imageSrc;
-        mainImage.src = newSrc;
-
-        thumbnails.forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-      });
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', initializeImageThumbnails);
 </script>
 
 
 <div class="container">
   <div class="product-page">
     <div class="product-image-gallery">
+      {% comment %} The product thumbnails have been removed. {% endcomment %}
       <div class="product-image">
         <img id="MainProductImage" src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ product.title }}">
-      </div>
-      <div class="product-thumbnails">
-        {% for image in product.images %}
-          <a href="#" class="thumbnail-item {% if forloop.first %}active{% endif %}" data-image-src="{{ image | image_url: width: 800 }}">
-            <img src="{{ image | image_url: width: 100 }}" alt="{{ image.alt | escape }}">
-          </a>
-        {% endfor %}
       </div>
     </div>
 
@@ -108,60 +87,54 @@
             <h1 class="product-title">{{ product.title }}</h1>
           {% when 'price' %}
             <p id="ProductPrice" class="product-price">{{ product.price | money }}</p>
-          {% when 'variant_picker' %}
-            {% unless product.has_only_default_variant %}
+          {% when 'color_swatch' %}
+            {% comment %}
+              MODIFIED: This now finds the variant image for each color
+              and displays it in the swatch instead of a solid color.
+            {% endcomment %}
+            {%- liquid
+              assign color_option = null
+              for option in product.options_with_values
+                if option.name == 'Color'
+                  assign color_option = option
+                  break
+                endif
+              endfor
+            -%}
+
+            {% if color_option %}
               <variant-selector data-url="{{ product.url }}">
                 <script type="application/json">
                   {{ product.variants | json }}
                 </script>
-                {% for option in product.options_with_values %}
                   <fieldset class="variant-fieldset">
-                    <legend class="variant-legend">{{ option.name }}</legend>
+                    <legend class="variant-legend">{{ color_option.name }}</legend>
                     <div class="variant-options">
-                      {% for value in option.values %}
-                        <input type="radio" id="option-{{ option.position }}-{{ value | handle }}" name="option-{{ option.position }}" value="{{ value }}" {% if option.selected_value == value %}checked{% endif %}>
-                        <label for="option-{{ option.position }}-{{ value | handle }}" class="variant-label">{{ value }}</label>
+                      {% for value in color_option.values %}
+                        {%- liquid
+                          assign swatch_variant = null
+                          for variant in product.variants
+                            if variant.options contains value
+                              assign swatch_variant = variant
+                              break
+                            endif
+                          endfor
+                        -%}
+                        <input type="radio" id="color-{{ forloop.index }}" name="option-{{ color_option.position }}" value="{{ value }}" {% if color_option.selected_value == value %}checked{% endif %}>
+                        <label
+                          for="color-{{ forloop.index }}"
+                          class="variant-label color-swatch"
+                          style="background-image: url({{ swatch_variant.featured_image | image_url: width: 100 }});"
+                          title="{{ value }}">
+                        </label>
                       {% endfor %}
                     </div>
                   </fieldset>
-                {% endfor %}
               </variant-selector>
-            {% endunless %}
-
-          {% comment %} --- START: Color Swatch Section --- {% endcomment %}
-          {% when 'color_swatch' %}
-            {%- liquid
-              assign color_option = product.options_with_values | where: 'name', 'Color' | first
-              if color_option != blank
-                assign images_by_color_json = product.images | group_by: 'alt' | json
-              endif
-            -%}
-
-            {% if color_option != blank %}
-              <script id="ColorSwatchData" type="application/json">
-                {{ images_by_color_json }}
-              </script>
-
-              <div class="color-swatch-container">
-                <p class="color-swatch-label">Color: <span id="SelectedColorName">{{ product.featured_image.alt }}</span></p>
-                <div class="color-swatch-options">
-                  {% for value in color_option.values %}
-                    {% assign swatch_image = product.images | where: 'alt', value | first %}
-                    <button
-                      class="color-swatch-item {% if product.featured_image.alt == value %}active{% endif %}"
-                      data-color="{{ value | escape }}"
-                      aria-label="Select color {{ value | escape }}"
-                      style="background-image: url('{{ swatch_image | image_url: width: 50 }}');"
-                    >
-                    </button>
-                  {% endfor %}
-                </div>
-              </div>
             {% endif %}
-          {% comment %} --- END: Color Swatch Section --- {% endcomment %}
 
           {% when 'description' %}
-            <p class="product-description">{{ product.description }}</p>
+            <div class="product-description">{{ product.description }}</div>
           {% when 'add_to_cart' %}
             {%- liquid
               assign default_text = block.settings.add_to_cart_text | default: "Add to Cart"
@@ -182,36 +155,6 @@
       {% endfor %}
     </div>
   </div>
-
-  {%- liquid
-    assign variant_images = product.variants | map: 'featured_image' | where: 'src', product.featured_image.src | uniq
-    if variant_images.size > 1
-      assign has_other_variants = true
-    else
-      assign has_other_variants = false
-    endif
-  -%}
-
-  {% if has_other_variants %}
-    <div class="variant-showcase">
-      <h2 class="variant-showcase-title">Also Available In</h2>
-      <div class="variant-showcase-grid">
-        {% for image in variant_images %}
-          {%- for variant in product.variants -%}
-            {%- if variant.featured_image.src == image.src -%}
-              {%- assign variant_for_image = variant -%}
-              {%- break -%}
-            {%- endif -%}
-          {%- endfor -%}
-          <a href="{{ variant_for_image.url }}" class="variant-showcase-item">
-            <img src="{{ image | image_url: width: 400 }}" alt="{{ image.alt | escape }}" loading="lazy">
-            <p class="variant-showcase-item-title">{{ variant_for_image.option1 }}</p>
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-  {% endif %}
-
 </div>
 
 {% schema %}
@@ -221,9 +164,8 @@
     { "type": "@app" },
     { "type": "title", "name": "Title", "limit": 1 },
     { "type": "price", "name": "Price", "limit": 1 },
-    { "type": "variant_picker", "name": "Variant Picker", "limit": 1 },
-    { "type": "description", "name": "Description", "limit": 1 },
     { "type": "color_swatch", "name": "Color Swatch", "limit": 1 },
+    { "type": "description", "name": "Description", "limit": 1 },
     { "type": "add_to_cart", "name": "Add to Cart Button", "limit": 1,
       "settings": [
         { "type": "text", "id": "add_to_cart_text", "label": "Add to Cart Button Text", "default": "Add to Cart" }
@@ -235,18 +177,20 @@
       "blocks": [
         { "type": "title" },
         { "type": "price" },
-        { "type": "variant_picker" },
-        { "type": "description" },
         { "type": "color_swatch" },
-        { "type": "add_to_cart" }
+        { "type": "add_to_cart" },
+        { "type": "description" }
       ]
     }
   ]
 }
 {% endschema %}
 
+{% comment %}
+  The cart drawer functionality is kept as is.
+  No changes were needed here.
+{% endcomment %}
 <script>
-  // Side Cart Drawer Script
   document.addEventListener('DOMContentLoaded', () => {
     const cartDrawer = document.querySelector('sidebar-drawer');
     const productForm = document.getElementById('product-form');
@@ -270,7 +214,7 @@
       fetch('/cart.js').then(response => response.json()).then(cart => {
         const container = cartDrawer.querySelector('[data-cart-items-container]');
         const template = cartDrawer.querySelector('[data-cart-item-template]');
-
+        
         container.innerHTML = '';
 
         cart.items.forEach(item => {
@@ -286,66 +230,9 @@
         const moneyFormat = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
         cartDrawer.querySelector('[data-cart-subtotal]').textContent = moneyFormat.format(cart.total_price / 100);
         cartDrawer.querySelector('[data-cart-total]').textContent = moneyFormat.format(cart.total_price / 100);
-
+        
         cartDrawer.classList.add('is-open');
       });
-    }
-  });
-
-  // Color Swatch Script
-  document.addEventListener('DOMContentLoaded', () => {
-    const colorSwatchDataElement = document.getElementById('ColorSwatchData');
-    if (!colorSwatchDataElement) return;
-
-    const imagesByColor = JSON.parse(colorSwatchDataElement.textContent);
-    const swatchOptions = document.querySelector('.color-swatch-options');
-
-    swatchOptions.addEventListener('click', (event) => {
-      const swatch = event.target.closest('.color-swatch-item');
-      if (!swatch) return;
-
-      const color = swatch.dataset.color;
-      selectColor(swatch, color);
-    });
-
-    function selectColor(activeSwatch, color) {
-      const mainImage = document.getElementById('MainProductImage');
-      const thumbnailsContainer = document.querySelector('.product-thumbnails');
-      const selectedColorName = document.getElementById('SelectedColorName');
-
-      if (!mainImage || !thumbnailsContainer) return;
-
-      document.querySelectorAll('.color-swatch-item').forEach(s => s.classList.remove('active'));
-      activeSwatch.classList.add('active');
-
-      if (selectedColorName) {
-        selectedColorName.textContent = color;
-      }
-
-      const newImages = imagesByColor[color];
-      if (!newImages || newImages.length === 0) return;
-
-      mainImage.src = newImages[0].src;
-
-      thumbnailsContainer.innerHTML = '';
-      newImages.forEach((image, index) => {
-        const thumbLink = document.createElement('a');
-        thumbLink.href = '#';
-        thumbLink.classList.add('thumbnail-item');
-        if (index === 0) {
-          thumbLink.classList.add('active');
-        }
-        thumbLink.dataset.imageSrc = image.src;
-
-        const thumbImg = document.createElement('img');
-        thumbImg.src = image.src.replace(/(\.jpg|\.png|\.gif|\.jpeg)/, '_100x$1');
-        thumbImg.alt = image.alt;
-
-        thumbLink.appendChild(thumbImg);
-        thumbnailsContainer.appendChild(thumbLink);
-      });
-
-      initializeImageThumbnails();
     }
   });
 </script>
@@ -371,51 +258,53 @@ html, body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
   overflow: hidden;
 }
+
 .product-image-gallery {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 32px;
   background: #f7f7f7;
-  height: 600px;
+  height: 450px;
 }
 .product-image {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 400px;
+  height: 100%;
 }
+
 .product-image img {
-  width: 50%;
+  width: auto;
   height: 100%;
   max-width: 450px;
   border-radius: 8px;
   object-fit: cover;
 }
-.product-thumbnails {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-.thumbnail-item {
-  width: 150px;
-  height: 150px;
-  border: 2px solid transparent;
-  border-radius: 4px;
+
+/* --- START: CSS for Image Swatches --- */
+.color-swatch {
+  height: 50px; /* Increased size slightly for better image visibility */
+  width: 50px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
   cursor: pointer;
-  overflow: hidden;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  padding: 0;
+  /* New properties to handle the background image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
-.thumbnail-item:hover { border-color: #ccc; }
-.thumbnail-item.active { border-color: #0070f3; }
-.thumbnail-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.variant-options input[type="radio"]:checked + .color-swatch {
+  border-color: #0070f3;
+  transform: scale(1.1);
+  box-shadow: 0 0 8px rgba(0, 112, 243, 0.5);
 }
+/* --- END: CSS for Image Swatches --- */
+
 .product-details {
   flex: 1;
   padding: 32px;
@@ -446,22 +335,10 @@ html, body {
 .variant-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
 }
 .variant-options input[type="radio"] { display: none; }
-.variant-label {
-  display: inline-block;
-  padding: 8px 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.variant-options input[type="radio"]:checked + .variant-label {
-  border-color: #0070f3;
-  background-color: #0070f3;
-  color: #fff;
-}
+
 .add-to-cart-btn {
   padding: 12px 32px;
   background: #0070f3;
@@ -470,6 +347,7 @@ html, body {
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer; transition: background 0.2s ease;
+  margin-top: 16px;
 }
 .add-to-cart-btn:hover:not([disabled]) { background: #005bb5; }
 .add-to-cart-btn:disabled {
@@ -482,65 +360,25 @@ html, body {
   color: #555;
   line-height: 1.6;
 }
-.variant-showcase {
-  margin-top: 40px;
-  padding-top: 40px;
-  border-top: 1px solid #e5e5e5;
-  text-align: center;
-}
-.variant-showcase-title {
-  font-size: 1.8rem;
-  margin-bottom: 24px;
-  color: #333;
-}
-.variant-showcase-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-}
-.variant-showcase-item {
-  text-decoration: none;
-  color: #333;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.variant-showcase-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-.variant-showcase-item img {
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  height: auto;
-}
-.variant-showcase-item-title {
-  padding: 12px;
-  margin: 0;
-  font-size: 0.9rem;
-  background: #f9f9f9;
-}
+
 @media (max-width: 900px) {
   .product-page { flex-direction: column; }
-  .product-details { padding: 16px; }
+  .product-details { padding: 24px; }
   .product-title { font-size: 1.8rem; }
   .product-price { font-size: 1.4rem; }
   .add-to-cart-btn { font-size: 0.9rem; padding: 10px 24px; }
 }
-@media (max-width: 600px) {
+@media (max-width: 400px) {
+  .product-image-gallery { height: 400px; }
   .product-title { font-size: 1.6rem; }
   .product-price { font-size: 1.2rem; }
   .add-to-cart-btn { font-size: 0.85rem; padding: 8px 20px; }
   .product-description { font-size: 0.9rem; }
 }
 
-/* --- START: Side Cart Drawer CSS --- */
+/* Side Cart Drawer CSS - No changes made here */
 sidebar-drawer {
-  position: fixed;
-  top: 0; right: 0; width: 100%; height: 100%; z-index: 1000; visibility: hidden; transition: visibility 0.3s;
+  position: fixed; top: 0; right: 0; width: 100%; height: 100%; z-index: 1000; visibility: hidden; transition: visibility 0.3s;
 }
 sidebar-drawer.is-open { visibility: visible; }
 .sidebar-overlay {
@@ -560,40 +398,4 @@ sidebar-drawer.is-open .sidebar-drawer__container { transform: translateX(0); }
 .checkout-btn { display: block; width: 100%; text-align: center; background: #0070f3; color: white; padding: 14px; text-decoration: none; border-radius: 4px; margin-top: 16px; }
 .cart-item { display: flex; gap: 16px; margin-bottom: 20px; align-items: center; }
 .cart-item__image img { width: 90px; height: 90px; object-fit: cover; border-radius: 4px; }
-/* --- END: Side Cart Drawer CSS --- */
-
-/* --- START: Color Swatch CSS --- */
-.color-swatch-container {
-  margin-top: 24px;
-}
-.color-swatch-label {
-  font-weight: bold;
-  margin-bottom: 12px;
-  font-size: 1rem;
-  color: #333;
-}
-.color-swatch-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.color-swatch-item {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid #e5e5e5;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-size: cover;
-  background-position: center;
-  padding: 0;
-}
-.color-swatch-item:hover {
-  border-color: #ccc;
-}
-.color-swatch-item.active {
-  border-color: #0070f3;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0070f3;
-}
-/* --- END: Color Swatch CSS --- */
 {% endstylesheet %}
