@@ -8,8 +8,6 @@
       this.addToCartButton = document.getElementById('AddToCartButton');
       this.addToCartText = document.getElementById('AddToCartText');
       this.variantIdInput = document.getElementById('ProductVariantId');
-      // MODIFIED: Find the new element for the color name
-      this.colorNameElement = document.getElementById('SelectedColorName');
       this.init();
     }
     init() {
@@ -35,8 +33,6 @@
       this._updatePrice(currentVariant);
       this._updateAddToCartButton(currentVariant);
       this._updateURL(currentVariant);
-      // MODIFIED: Call the new function to update the color name
-      this._updateSelectedColorName(currentVariant, selectedOptions);
     }
     _getSelectedOptions() {
       const selectedRadios = this.container.querySelectorAll('input[type="radio"]:checked');
@@ -88,16 +84,6 @@
       if (!variant) return;
       window.history.replaceState({}, '', `?variant=${variant.id}`);
     }
-
-    // MODIFIED: New function to update the color name text
-    _updateSelectedColorName(variant, selectedOptions) {
-      if (this.colorNameElement) {
-        // Use the first selected option's value (which is the color)
-        if (selectedOptions && selectedOptions.length > 0) {
-          this.colorNameElement.textContent = selectedOptions[0];
-        }
-      }
-    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -134,11 +120,8 @@
                   -%}
                   <legend class="variant-legend">
                     {{ option.name }}
-                    {% if option_name_cleaned == 'color' or option_name_cleaned == 'colour' %}
-                      {% comment %} MODIFIED: Added a span to display the selected color name {% endcomment %}
-                      <span id="SelectedColorName"></span>
-                    {% endif %}
                   </legend>
+            
                   <div class="variant-options">
                     {% for value in option.values %}
                       {% assign value_handle = value | handle %}
@@ -160,18 +143,24 @@
                             endif
                           endfor
                         -%}
+ 
+                        {% comment %} MODIFIED: Added a wrapper and a span for the color name {% endcomment %}
                         <label 
                           for="option-{{ option.position }}-{{ value_handle }}" 
                           class="variant-label variant-label--color" 
                           title="{{ value }}"
                           data-option-label
                         >
-                          {% if variant_for_swatch %}
-                            <img class="color-swatch-image" src="{{ variant_for_swatch.featured_image | image_url: width: 100 }}" alt="{{ value }}">
-                          {% else %}
-                            <span class="color-swatch swatch-{{ value_handle }}" style="background-color: {{ value }};"></span>
-                          {% endif %}
+                          <div class="swatch-content-wrapper">
+                            {% if variant_for_swatch %}
+                              <img class="color-swatch-image" src="{{ variant_for_swatch.featured_image | image_url: width: 100 }}" alt="{{ value }}">
+                            {% else %}
+                              <span class="color-swatch swatch-{{ value_handle }}" style="background-color: {{ value }};"></span>
+                            {% endif %}
+                            <span class="variant-swatch-name">{{ value }}</span>
+                          </div>
                         </label>
+
                       {% else %}
                         <label 
                           for="option-{{ option.position }}-{{ value_handle }}" 
@@ -329,8 +318,8 @@ html, body {
 }
 .product-image img {
   width: 100%;
-  height: 500px; /* MODIFIED: Set height to 500px */
-  max-width: 450px; /* MODIFIED: Increased max-width for a wider image */
+  height: 500px;
+  max-width: 450px;
   border-radius: 8px;
   object-fit: contain;
 }
@@ -357,13 +346,6 @@ html, body {
   margin-bottom: 12px;
   font-size: 1rem;
 }
-/* --- MODIFIED: Style for the selected color name --- */
-#SelectedColorName {
-  font-weight: normal;
-  padding-left: 8px;
-  color: #555;
-}
-/* ------------------------------------------------ */
 .variant-options {
   display: flex;
   flex-wrap: wrap;
@@ -377,28 +359,45 @@ html, body {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
+/* --- MODIFIED: Styles for color swatches --- */
 .variant-label--color {
-  padding: 4px;
-  height: 55px;
-  width: 55px;
+  padding: 0;
+  border: 1px solid transparent; /* Border is shown on the image inside */
+  border-radius: 4px;
+  width: auto;
+  height: auto;
+}
+
+.variant-label--color.active .color-swatch-image {
+  outline: 3px solid #0070f3;
+  outline-offset: 2px;
+}
+
+/* --- NEW: Wrapper for swatch image and its name --- */
+.swatch-content-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 4px;
+}
+
+.color-swatch-image {
+  width: 55px; /* Fixed size for the round image */
+  height: 55px;
+  object-fit: cover;
   border-radius: 50%;
   border: 1px solid #ccc;
 }
 
-.variant-label--color.active {
-  border-color: transparent;
-  outline: 3px solid #0070f3;
-  outline-offset: 2px;
+/* --- NEW: Style for the color name under the swatch --- */
+.variant-swatch-name {
+  font-size: 0.8rem;
+  color: #333;
+  text-align: center;
 }
-.color-swatch-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
+
 .add-to-cart-btn {
   padding: 12px 32px;
   background: #0070f3;
