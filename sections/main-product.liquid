@@ -1,146 +1,106 @@
-{% comment %}
-  The JavaScript does not need to be changed.
-{% endcomment %}
 <script>
-  class VariantSelector extends HTMLElement {
-    constructor() {
-      super();
-      this.addEventListener('change', this.onVariantChange);
-      this.variantData = JSON.parse(this.querySelector('[type="application/json"]').textContent);
+  class ProductVariantManager {
+    constructor(container) {
+      this.container = container;
+      this.variantData = JSON.parse(this.container.querySelector('[data-variant-json]').textContent);
+      this.mainImage = document.getElementById('MainProductImage');
+      this.priceElement = document.getElementById('ProductPrice');
+      this.addToCartButton = document.getElementById('AddToCartButton');
+      this.addToCartText = document.getElementById('AddToCartText');
+      this.variantIdInput = document.getElementById('ProductVariantId');
+      this.init();
     }
-
+    init() {
+      const optionLabels = this.container.querySelectorAll('[data-option-label]');
+      optionLabels.forEach(label => {
+        label.addEventListener('click', (event) => {
+          event.preventDefault();
+          const forId = label.getAttribute('for');
+          const radioButton = document.getElementById(forId);
+          if (radioButton) {
+            radioButton.checked = true;
+            this.onVariantChange();
+          }
+        });
+      });
+      this.onVariantChange();
+    }
     onVariantChange() {
-      this.updateSelectedVariant();
-      if (!this.currentVariant) return;
-      this.updateURL();
-      this.updateFeaturedImage();
-      this.updatePrice();
-      this.updateAddToCartButton();
+      const selectedOptions = this._getSelectedOptions();
+      const currentVariant = this._findVariant(selectedOptions);
+      this._updateActiveStyles(selectedOptions);
+      this._updateMasterImage(currentVariant);
+      this._updatePrice(currentVariant);
+      this._updateAddToCartButton(currentVariant);
+      this._updateURL(currentVariant);
     }
-
-    updateSelectedVariant() {
-      const options = Array.from(this.querySelectorAll('input[type=radio]:checked'), (input) => input.value);
-      this.currentVariant = this.variantData.find((variant) => {
-        return !variant.options.map((option, index) => {
-          return options[index] === option;
-        }).includes(false);
+    _getSelectedOptions() {
+      const selectedRadios = this.container.querySelectorAll('input[type="radio"]:checked');
+      const options = [];
+      selectedRadios.forEach(radio => options.push(radio.value));
+      return options;
+    }
+    _findVariant(selectedOptions) {
+      return this.variantData.find(variant => {
+        return selectedOptions.every((optionValue, index) => {
+          return variant.options[index] === optionValue;
+        });
       });
     }
-
-    updateURL() {
-      if (!this.currentVariant) return;
-      window.history.replaceState({}, '', `${this.dataset.url}?variant=${this.currentVariant.id}`);
-    }
-
-    // REVISED JAVASCRIPT WITH DEBUGGING
-    updateFeaturedImage() {
-      console.log('%c[Variant Selector] %cUpdating featured image...', 'font-weight:bold;', 'font-weight:normal;');
-      const mainImageContainer = document.querySelector('.product-image');
-      const mainImage = document.getElementById('MainProductImage');
-      
-      if (!this.currentVariant) {
-        console.warn('[Variant Selector] No current variant selected. Aborting.');
-        return;
-      }
-
-      // Find the selected color value
-      let selectedColor = null;
-      const colorFieldset = Array.from(this.querySelectorAll('.variant-fieldset')).find(fieldset => {
-        const legend = fieldset.querySelector('.variant-legend');
-        if (!legend) return false;
-        const legendText = legend.textContent.trim().toLowerCase();
-        const isColorOption = legendText === 'color' || legendText === 'colour';
-        return isColorOption;
+    _updateActiveStyles(selectedOptions) {
+      const allLabels = this.container.querySelectorAll('[data-option-label]');
+      allLabels.forEach(label => label.classList.remove('active'));
+      selectedOptions.forEach((value, index) => {
+        const valueHandle = value.replace(/\s+/g, '-').toLowerCase();
+        const activeLabel = this.container.querySelector(`[for="option-${index + 1}-${valueHandle}"]`);
+        if (activeLabel) {
+          activeLabel.classList.add('active');
+        }
       });
-
-      if (colorFieldset) {
-        console.log('[Variant Selector] Found a "Color" option fieldset.');
-        const checkedRadio = colorFieldset.querySelector('input[type=radio]:checked');
-        if (checkedRadio) {
-          selectedColor = checkedRadio.value;
-          console.log(`[Variant Selector] Selected color value: "${selectedColor}"`);
-        }
+    }
+    _updateMasterImage(variant) {
+      if (!variant || !variant.featured_image) return;
+      this.mainImage.src = variant.featured_image.src;
+      this.mainImage.alt = variant.featured_image.alt;
+    }
+    _updatePrice(variant) {
+      if (!variant) return;
+      this.priceElement.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(variant.price / 100);
+    }
+    _updateAddToCartButton(variant) {
+      if (!variant) {
+        this.addToCartButton.setAttribute('disabled', true);
+        this.addToCartText.textContent = 'Unavailable';
+      } else if (!variant.available) {
+        this.addToCartButton.setAttribute('disabled', true);
+        this.addToCartText.textContent = 'Sold Out';
       } else {
-        console.info('[Variant Selector] No "Color" option fieldset found. Defaulting to image display.');
-      }
-
-      // Now, update the display
-      if (selectedColor) {
-        console.log(`[Variant Selector] Applying background color: ${selectedColor}`);
-        mainImage.style.display = 'none';
-        mainImageContainer.style.backgroundColor = selectedColor;
-      } else {
-        console.info('[Variant Selector] No color selected. Displaying variant image.');
-        mainImageContainer.style.backgroundColor = '';
-        mainImage.style.display = '';
-        if (this.currentVariant.featured_image) {
-          mainImage.src = this.currentVariant.featured_image.src;
-          mainImage.alt = this.currentVariant.featured_image.alt;
-        }
+        this.addToCartButton.removeAttribute('disabled');
+        this.addToCartText.textContent = this.addToCartButton.dataset.defaultText || 'Add to Cart';
+        this.variantIdInput.value = variant.id;
       }
     }
-
-    updatePrice() {
-      const priceElement = document.getElementById('ProductPrice');
-      if (!this.currentVariant) return;
-      priceElement.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(this.currentVariant.price / 100);
-    }
-
-    updateAddToCartButton() {
-      const addButton = document.getElementById('AddToCartButton');
-      const addButtonText = document.getElementById('AddToCartText');
-      const variantIdInput = document.getElementById('ProductVariantId');
-
-      if (!this.currentVariant) {
-        addButton.setAttribute('disabled', true);
-        addButtonText.textContent = 'Unavailable';
-      } else if (!this.currentVariant.available) {
-        addButton.setAttribute('disabled', true);
-        addButtonText.textContent = 'Sold Out';
-      } else {
-        addButton.removeAttribute('disabled');
-        const defaultText = addButton.dataset.defaultText || 'Add to Cart';
-        addButtonText.textContent = defaultText;
-        variantIdInput.value = this.currentVariant.id;
-      }
+    _updateURL(variant) {
+      if (!variant) return;
+      window.history.replaceState({}, '', `?variant=${variant.id}`);
     }
   }
 
-  customElements.define('variant-selector', VariantSelector);
-  function initializeImageThumbnails() {
-    const mainImage = document.getElementById('MainProductImage');
-    const thumbnails = document.querySelectorAll('.thumbnail-item');
-    thumbnails.forEach(thumb => {
-      thumb.addEventListener('click', function(event) {
-        event.preventDefault();
-        const newSrc = this.dataset.imageSrc;
-        mainImage.src = newSrc;
-        
-        thumbnails.forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-      });
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', initializeImageThumbnails);
+  document.addEventListener('DOMContentLoaded', () => {
+    const productContainer = document.querySelector('[data-product-container]');
+    if (productContainer) {
+      new ProductVariantManager(productContainer);
+    }
+  });
 </script>
 
-
-<div class="container">
+<div class="container" data-product-container>
   <div class="product-page">
     <div class="product-image-gallery">
       <div class="product-image">
         <img id="MainProductImage" src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ product.title }}">
       </div>
-      <div class="product-thumbnails">
-        {% for image in product.images %}
-          <a href="#" class="thumbnail-item {% if forloop.first %}active{% endif %}" data-image-src="{{ image | image_url: width: 800 }}">
-            <img src="{{ image | image_url: width: 100 }}" alt="{{ image.alt | escape }}">
-          </a>
-        {% endfor %}
-      </div>
     </div>
-
     <div class="product-details">
       {% for block in section.blocks %}
         {% case block.type %}
@@ -148,39 +108,68 @@
             <h1 class="product-title">{{ product.title }}</h1>
           {% when 'price' %}
             <p id="ProductPrice" class="product-price">{{ product.price | money }}</p>
-
           {% when 'variant_picker' %}
+            <script data-variant-json type="application/json">
+              {{ product.variants | json }}
+            </script>
             {% unless product.has_only_default_variant %}
-              <variant-selector data-url="{{ product.url }}">
-                <script type="application/json">
-                  {{ product.variants | json }}
-                </script>
-                {% for option in product.options_with_values %}
-                  <fieldset class="variant-fieldset">
-                    <legend class="variant-legend">{{ option.name }}</legend>
-                    <div class="variant-options">
-                      {% for value in option.values %}
-                        <input type="radio" id="option-{{ option.position }}-{{ value | handle }}" name="option-{{ option.position }}" value="{{ value }}" {% if option.selected_value == value %}checked{% endif %}>
+              {% for option in product.options_with_values %}
+                <fieldset class="variant-fieldset">
+                  <legend class="variant-legend">{{ option.name }}</legend>
+                  <div class="variant-options">
+                    {% for value in option.values %}
+                      {% assign value_handle = value | handle %}
+                      <input 
+                        type="radio" 
+                        class="visually-hidden"
+                        id="option-{{ option.position }}-{{ value_handle }}" 
+                        name="option-{{ option.position }}" 
+                        value="{{ value }}" 
+                        {% if option.selected_value == value %}checked{% endif %}
+                      >
+                      {%- liquid
+                        assign option_name_cleaned = option.name | strip | downcase
+                      -%}
+                      {% if option_name_cleaned == 'color' or option_name_cleaned == 'colour' %}
+                        
                         {%- liquid
                           comment
-                            THE FIX: We add "| strip" to remove whitespace before checking the name.
+                            NEW ROBUST LOGIC: Loop through variants to find a match for the current value.
+                            This assumes 'Color' is the first option (option1).
                           endcomment
-                          assign option_name_cleaned = option.name | strip | downcase
+                          assign variant_for_swatch = null
+                          for variant in product.variants
+                            if variant.option1 == value and variant.featured_image != null
+                              assign variant_for_swatch = variant
+                              break
+                            endif
+                          endfor
                         -%}
-                        {% if option_name_cleaned == 'color' or option_name_cleaned == 'colour' %}
-                          <label for="option-{{ option.position }}-{{ value | handle }}" class="variant-label variant-label--color" title="{{ value }}">
-                            <span class="color-swatch swatch-{{ value | handle }}" style="background-color: {{ value }};"></span>
-                          </label>
-                        {% else %}
-                          <label for="option-{{ option.position }}-{{ value | handle }}" class="variant-label">{{ value }}</label>
-                        {% endif %}
-                      {% endfor %}
-                    </div>
-                  </fieldset>
-                {% endfor %}
-              </variant-selector>
-            {% endunless %}
 
+                        <label 
+                          for="option-{{ option.position }}-{{ value_handle }}" 
+                          class="variant-label variant-label--color" 
+                          title="{{ value }}"
+                          data-option-label
+                        >
+                          {% if variant_for_swatch %}
+                            <img class="color-swatch-image" src="{{ variant_for_swatch.featured_image | image_url: width: 100 }}" alt="{{ value }}">
+                          {% else %}
+                            <span class="color-swatch swatch-{{ value_handle }}" style="background-color: {{ value }};"></span>
+                          {% endif %}
+                        </label>
+                      {% else %}
+                        <label 
+                          for="option-{{ option.position }}-{{ value_handle }}" 
+                          class="variant-label"
+                          data-option-label
+                        >{{ value }}</label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </fieldset>
+              {% endfor %}
+            {% endunless %}
           {% when 'description' %}
             <p class="product-description">{{ product.description }}</p>
           {% when 'add_to_cart' %}
@@ -203,36 +192,6 @@
       {% endfor %}
     </div>
   </div>
-
-  {%- liquid
-    assign variant_images = product.variants | map: 'featured_image' | where: 'src', product.featured_image.src | uniq
-    if variant_images.size > 1
-      assign has_other_variants = true
-    else
-      assign has_other_variants = false
-    endif
-  -%}
-
-  {% if has_other_variants %}
-    <div class="variant-showcase">
-      <h2 class="variant-showcase-title">Also Available In</h2>
-      <div class="variant-showcase-grid">
-        {% for image in variant_images %}
-          {%- for variant in product.variants -%}
-            {%- if variant.featured_image.src == image.src -%}
-              {%- assign variant_for_image = variant -%}
-              {%- break -%}
-            {%- endif -%}
-          {%- endfor -%}
-          <a href="{{ variant_for_image.url }}" class="variant-showcase-item">
-            <img src="{{ image | image_url: width: 400 }}" alt="{{ image.alt | escape }}" loading="lazy">
-            <p class="variant-showcase-item-title">{{ variant_for_image.option1 }}</p>
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-  {% endif %}
-
 </div>
 
 {% schema %}
@@ -268,7 +227,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     const cartDrawer = document.querySelector('sidebar-drawer');
     const productForm = document.getElementById('product-form');
-
     productForm?.addEventListener('submit', function(event) {
       event.preventDefault(); 
       fetch('/cart/add.js', {
@@ -280,17 +238,13 @@
         updateAndOpenDrawer();
       }).catch(error => console.error('Error:', error));
     });
-
     cartDrawer?.querySelector('.sidebar-drawer__close-btn')?.addEventListener('click', () => cartDrawer.classList.remove('is-open'));
     cartDrawer?.querySelector('.sidebar-overlay')?.addEventListener('click', () => cartDrawer.classList.remove('is-open'));
-
     function updateAndOpenDrawer() {
       fetch('/cart.js').then(response => response.json()).then(cart => {
         const container = cartDrawer.querySelector('[data-cart-items-container]');
         const template = cartDrawer.querySelector('[data-cart-item-template]');
-        
         container.innerHTML = '';
-
         cart.items.forEach(item => {
           const itemHtml = template.innerHTML
             .replace('{KEY}', item.key)
@@ -300,11 +254,9 @@
             .replace('{QUANTITY}', item.quantity);
           container.innerHTML += itemHtml;
         });
-
         const moneyFormat = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
         cartDrawer.querySelector('[data-cart-subtotal]').textContent = moneyFormat.format(cart.total_price / 100);
         cartDrawer.querySelector('[data-cart-total]').textContent = moneyFormat.format(cart.total_price / 100);
-        
         cartDrawer.classList.add('is-open');
       });
     }
@@ -313,84 +265,60 @@
 
 {% stylesheet %}
 html, body {
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   overflow-x: hidden;
+}
+.visually-hidden {
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  width: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
 }
 .container {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  box-sizing: border-box; padding: 0 16px;
+  box-sizing: border-box;
+  padding: 0 16px;
 }
 .product-page {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   margin: 40px auto;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
   overflow: hidden;
 }
-
 .product-image-gallery {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 300px; /* Prevents image column from getting too squished */
   padding: 32px;
   background: #f7f7f7;
-  height: 600px;
-}
-.product-image {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 400px;
+}
+.product-image {
+  max-width: 100%;
 }
 .product-image img {
-  width: 80%;
-  height: 100%;
-  max-width: 450px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-.product-thumbnails {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 16px; /* Increased gap for circles */
-  margin-top: 20px;
-}
-
-/* START: MODIFIED THUMBNAIL STYLES */
-.thumbnail-item {
-  width: 80px; /* Adjusted size for circular design */
-  height: 80px; /* Adjusted size for circular design */
-  border: 2px solid transparent;
-  border-radius: 50%; /* CHANGED: Make the container a circle */
-  cursor: pointer;
-  overflow: hidden;
-  transition: all 0.2s ease;
-}
-.thumbnail-item:hover { 
-  border-color: #ccc; 
-}
-.thumbnail-item.active {
-  border-color: transparent; /* Hide border to emphasize outline */
-  outline: 3px solid #0070f3; /* ADDED: Prominent outline for active state */
-  outline-offset: 3px; /* ADDED: Space between thumbnail and outline */
-}
-.thumbnail-item img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%; /* ADDED: Ensure image inside is also a circle */
+  height: auto;
+  max-width: 450px;
+  max-height: 500px;
+  border-radius: 8px;
+  object-fit: contain;
 }
-/* END: MODIFIED THUMBNAIL STYLES */
-
 .product-details {
   flex: 1;
+  min-width: 300px; /* Prevents details column from getting too squished */
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -421,7 +349,6 @@ html, body {
   flex-wrap: wrap;
   gap: 10px;
 }
-.variant-options input[type="radio"] { display: none; }
 .variant-label {
   display: inline-block;
   padding: 8px 16px;
@@ -430,41 +357,32 @@ html, body {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.variant-options input[type="radio"]:checked + .variant-label {
-  border-color: #0070f3;
-  background-color: #0070f3;
-  color: #fff;
-}
-
-/* START: CSS FOR COLOR SWATCHES */
 .variant-label--color {
   padding: 4px;
-  height: 32px;
-  width: 32px;
+  height: 44px;
+  width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  border: 1px solid #ccc;
 }
-.color-swatch {
-  display: block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid rgba(0,0,0,0.1);
-}
-.variant-options input[type="radio"]:checked + .variant-label--color {
+/* .variant-label.active {
   border-color: #0070f3;
-  background-color: transparent;
+  background-color: #0070f3;
+  color: #fff;
+} */
+.variant-label--color.active {
+  border-color: transparent;
+  outline: 3px solid #0070f3;
+  outline-offset: 2px; 
 }
-
-/* START: SECTION FOR CUSTOM COLOR VALUES */
-.swatch-rainbow {
-  background-color: transparent !important;
-  background-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo) !important;
+.color-swatch-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
-/* END: SECTION FOR CUSTOM COLOR VALUES */
-
 .add-to-cart-btn {
   padding: 12px 32px;
   background: #0070f3;
@@ -472,9 +390,12 @@ html, body {
   border: none;
   border-radius: 4px;
   font-size: 1rem;
-  cursor: pointer; transition: background 0.2s ease;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
-.add-to-cart-btn:hover:not([disabled]) { background: #005bb5; }
+.add-to-cart-btn:hover:not([disabled]) {
+  background: #005bb5;
+}
 .add-to-cart-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
@@ -485,84 +406,95 @@ html, body {
   color: #555;
   line-height: 1.6;
 }
-.variant-showcase {
-  margin-top: 40px;
-  padding-top: 40px;
-  border-top: 1px solid #e5e5e5;
-  text-align: center;
+@media (max-width: 768px) {
+  .product-page {
+    flex-direction: column;
+  }
 }
-.variant-showcase-title {
-  font-size: 1.8rem;
-  margin-bottom: 24px;
-  color: #333;
-}
-.variant-showcase-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-}
-.variant-showcase-item {
-  text-decoration: none;
-  color: #333;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.variant-showcase-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-.variant-showcase-item img {
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  height: auto;
-}
-.variant-showcase-item-title {
-  padding: 12px;
-  margin: 0;
-  font-size: 0.9rem;
-  background: #f9f9f9;
-}
-@media (max-width: 900px) {
-  .product-page { flex-direction: column; }
-  .product-details { padding: 16px; }
-  .product-title { font-size: 1.8rem; }
-  .product-price { font-size: 1.4rem; }
-  .add-to-cart-btn { font-size: 0.9rem; padding: 10px 24px; }
-}
-@media (max-width: 600px) {
-  .product-title { font-size: 1.6rem; }
-  .product-price { font-size: 1.2rem; }
-  .add-to-cart-btn { font-size: 0.85rem; padding: 8px 20px; }
-  .product-description { font-size: 0.9rem; }
-}
-
-/* --- START: Side Cart Drawer CSS --- */
 sidebar-drawer {
   position: fixed;
-  top: 0; right: 0; width: 100%; height: 100%; z-index: 1000; visibility: hidden; transition: visibility 0.3s;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  visibility: hidden;
+  transition: visibility 0.3s;
 }
-sidebar-drawer.is-open { visibility: visible; }
+sidebar-drawer.is-open {
+  visibility: visible;
+}
 .sidebar-overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
   transition: opacity 0.3s;
 }
-sidebar-drawer.is-open .sidebar-overlay { opacity: 1; }
-.sidebar-drawer__container {
-  position: absolute; top: 0; right: 0; width: 100%;
-  max-width: 420px; height: 100%; background-color: #fff; transform: translateX(100%); transition: transform 0.3s; display: flex; flex-direction: column;
+sidebar-drawer.is-open .sidebar-overlay {
+  opacity: 1;
 }
-sidebar-drawer.is-open .sidebar-drawer__container { transform: translateX(0); }
-.sidebar-drawer__header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e5e5; }
-.sidebar-drawer__content { flex-grow: 1;
-  overflow-y: auto; padding: 20px; }
-.sidebar-drawer__footer { padding: 20px; border-top: 1px solid #e5e5e5; }
-.cart-summary { display: flex; justify-content: space-between; margin-bottom: 10px; }
-.checkout-btn { display: block; width: 100%; text-align: center; background: #0070f3; color: white; padding: 14px; text-decoration: none; border-radius: 4px; margin-top: 16px; }
-.cart-item { display: flex; gap: 16px; margin-bottom: 20px; align-items: center; }
-.cart-item__image img { width: 90px; height: 90px; object-fit: cover; border-radius: 4px; }
-/* --- END: Side Cart Drawer CSS --- */
+.sidebar-drawer__container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  background-color: #fff;
+  transform: translateX(100%);
+  transition: transform 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+sidebar-drawer.is-open .sidebar-drawer__container {
+  transform: translateX(0);
+}
+.sidebar-drawer__header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e5e5;
+}
+.sidebar-drawer__content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+.sidebar-drawer__footer {
+  padding: 20px;
+  border-top: 1px solid #e5e5e5;
+}
+.cart-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.checkout-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #0070f3;
+  color: white;
+  padding: 14px;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+.cart-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.cart-item__image img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 4px;
+}
 {% endstylesheet %}
