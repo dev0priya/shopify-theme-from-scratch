@@ -8,6 +8,8 @@
       this.addToCartButton = document.getElementById('AddToCartButton');
       this.addToCartText = document.getElementById('AddToCartText');
       this.variantIdInput = document.getElementById('ProductVariantId');
+      // MODIFIED: Find the new element for the color name
+      this.colorNameElement = document.getElementById('SelectedColorName');
       this.init();
     }
     init() {
@@ -33,6 +35,8 @@
       this._updatePrice(currentVariant);
       this._updateAddToCartButton(currentVariant);
       this._updateURL(currentVariant);
+      // MODIFIED: Call the new function to update the color name
+      this._updateSelectedColorName(currentVariant, selectedOptions);
     }
     _getSelectedOptions() {
       const selectedRadios = this.container.querySelectorAll('input[type="radio"]:checked');
@@ -84,6 +88,16 @@
       if (!variant) return;
       window.history.replaceState({}, '', `?variant=${variant.id}`);
     }
+
+    // MODIFIED: New function to update the color name text
+    _updateSelectedColorName(variant, selectedOptions) {
+      if (this.colorNameElement) {
+        // Use the first selected option's value (which is the color)
+        if (selectedOptions && selectedOptions.length > 0) {
+          this.colorNameElement.textContent = selectedOptions[0];
+        }
+      }
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -115,7 +129,16 @@
             {% unless product.has_only_default_variant %}
               {% for option in product.options_with_values %}
                 <fieldset class="variant-fieldset">
-                  <legend class="variant-legend">{{ option.name }}</legend>
+                  {%- liquid
+                    assign option_name_cleaned = option.name | strip | downcase
+                  -%}
+                  <legend class="variant-legend">
+                    {{ option.name }}
+                    {% if option_name_cleaned == 'color' or option_name_cleaned == 'colour' %}
+                      {% comment %} MODIFIED: Added a span to display the selected color name {% endcomment %}
+                      <span id="SelectedColorName"></span>
+                    {% endif %}
+                  </legend>
                   <div class="variant-options">
                     {% for value in option.values %}
                       {% assign value_handle = value | handle %}
@@ -127,16 +150,8 @@
                         value="{{ value }}" 
                         {% if option.selected_value == value %}checked{% endif %}
                       >
-                      {%- liquid
-                        assign option_name_cleaned = option.name | strip | downcase
-                      -%}
                       {% if option_name_cleaned == 'color' or option_name_cleaned == 'colour' %}
-                        
                         {%- liquid
-                          comment
-                            NEW ROBUST LOGIC: Loop through variants to find a match for the current value.
-                            This assumes 'Color' is the first option (option1).
-                          endcomment
                           assign variant_for_swatch = null
                           for variant in product.variants
                             if variant.option1 == value and variant.featured_image != null
@@ -145,7 +160,6 @@
                             endif
                           endfor
                         -%}
-
                         <label 
                           for="option-{{ option.position }}-{{ value_handle }}" 
                           class="variant-label variant-label--color" 
@@ -297,32 +311,32 @@ html, body {
   overflow: hidden;
 }
 .product-image-gallery {
-  flex: 1;
-  min-width: 300px; /* Prevents image column from getting too squished */
+  flex: 1.5; 
+  min-width: 300px;
   padding: 32px;
   background: #f7f7f7;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.product-image {
-  max-width: 100%;
-}
-.product-image img {
-  width: 100%;
-  height: auto;
-  max-width: 450px;
-  max-height: 500px;
-  border-radius: 8px;
-  object-fit: contain;
-}
 .product-details {
-  flex: 1;
-  min-width: 300px; /* Prevents details column from getting too squished */
+  flex: 1; 
+  min-width: 300px;
   padding: 32px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+.product-image img {
+  width: 60%;
+  height: auto;
+  max-width: 350px;
+  max-height: 550px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.product-image {
+  max-width: 100%;
 }
 .product-title {
   font-size: 2rem;
@@ -344,6 +358,13 @@ html, body {
   margin-bottom: 12px;
   font-size: 1rem;
 }
+/* --- MODIFIED: Style for the selected color name --- */
+#SelectedColorName {
+  font-weight: normal;
+  padding-left: 8px;
+  color: #555;
+}
+/* ------------------------------------------------ */
 .variant-options {
   display: flex;
   flex-wrap: wrap;
@@ -359,23 +380,19 @@ html, body {
 }
 .variant-label--color {
   padding: 4px;
-  height: 44px;
-  width: 44px;
+  height: 55px;
+  width: 55px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   border: 1px solid #ccc;
 }
-/* .variant-label.active {
-  border-color: #0070f3;
-  background-color: #0070f3;
-  color: #fff;
-} */
+
 .variant-label--color.active {
   border-color: transparent;
   outline: 3px solid #0070f3;
-  outline-offset: 2px; 
+  outline-offset: 2px;
 }
 .color-swatch-image {
   width: 100%;
