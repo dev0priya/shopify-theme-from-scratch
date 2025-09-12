@@ -19,9 +19,16 @@ body {
   padding: 0;
 }
 
+.site-header__logo {
+  margin-left: 16px;
+  /* Move the logo closer to the left */
+  display: flex;
+  align-items: center;
+}
+
 .site-header__logo img {
-  height: 70px;
-  width: auto;
+  /* The height is now auto to respect the width set in the editor */
+  height: auto;
   display: block;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.07));
   transition: transform 0.2s;
@@ -140,7 +147,6 @@ body {
     gap: 16px;
     margin-top: 12px;
   }
-  
 }
 </style>
 
@@ -148,24 +154,32 @@ body {
   <div class="container">
     <div class="site-header__logo">
       <a href="/" aria-label="Home">
-        {% if shop.brand.logo %}
-            <img src="{{ shop.brand.logo | image_url: width: 180 }}" alt="{{ shop.brand.name }} logo" class="logo-img" />
+        {% if section.settings.logo %}
+            <img 
+              src="{{ section.settings.logo | image_url: width: 500 }}" 
+              alt="{{ section.settings.logo.alt | default: shop.brand.name }}" 
+              class="logo-img"
+              style="width: {{ section.settings.logo_width }}px;"
+            />
         {% else %}
             <span class="logo-text" style="font-size:2rem;font-weight:700;color:#223;">{{ shop.brand.name }}</span>
         {% endif %}
       </a>
     </div>
     <nav class="site-header__nav">
-      <ul class="site-header__menu">
-        {% for link in linklists.main-menu.links %}
-        <li>
-          <a href="{{ link.url }}">{{ link.title }}</a>
-        </li>
-        {% endfor %}
-      </ul>
+      {% if section.settings.menu != blank %}
+        <ul class="site-header__menu">
+          {% for link in section.settings.menu.links %}
+          <li>
+            <a href="{{ link.url }}">{{ link.title }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </nav>
     <div class="site-header__actions">
-      <a href="javascript:void(0);" class="cart-icon" onclick="document.querySelector('sidebar-drawer').open()">
+      <a href="javascript:void(0);"
+        class="cart-icon" onclick="document.querySelector('sidebar-drawer').open()">
         <svg width="24" height="24" fill="none" stroke="#223" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61l1.6-9.39H6"/></svg>
         <span class="cart-count-bubble">{{ cart.item_count }}</span>
       </a>
@@ -178,3 +192,33 @@ body {
     </div>
   </div>
 </header>
+
+{% schema %}
+{
+  "name": "Header",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo image"
+    },
+    {
+      "type": "range",
+      "id": "logo_width",
+      "min": 50,
+      "max": 250,
+      "step": 5,
+      "unit": "px",
+      "label": "Logo width",
+      "default": 120
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Header menu",
+      "default": "main-menu",
+      "info": "Select the menu you want to display in the header."
+    }
+  ]
+}
+{% endschema %}

@@ -1,52 +1,159 @@
+{% comment %}
+  The container for the announcement bar.
+  - `data-section-id`: Unique identifier for the section.
+  - `data-loop`: Fetches the loop setting from the editor.
+  - `data-speed`: Fetches the rotation speed from the editor.
+{% endcomment %}
 <div
-  class="announcement-bar"
+  class="announcement-bar-container"
+  data-section-id="{{ section.id }}"
+  data-loop="{{ section.settings.loop_announcements }}"
+  data-speed="{{ section.settings.rotation_speed }}"
   style="background: {{ section.settings.background_color }}; color: {{ section.settings.text_color }};"
 >
-  <span>{{ section.settings.announcement_text }}</span>
+  <div class="announcement-bar__slider">
+    {% for block in section.blocks %}
+      <div class="announcement-bar__slide" {{ block.shopify_attributes }}>
+        <span>{{ block.settings.text }}</span>
+      </div>
+    {% endfor %}
+  </div>
 </div>
+
+<style>
+  .announcement-bar-container {
+    width: 100vw;
+    height: 30px; /* You can adjust the height if needed */
+    overflow: hidden; /* Hides the other slides */
+    position: relative;
+  }
+
+  .announcement-bar__slider {
+    display: flex;
+    height: 100%;
+    /* The transition property animates the slide movement */
+    transition: transform 0.5s ease-in-out;
+  }
+
+  .announcement-bar__slide {
+    width: 100vw;
+    height: 100%;
+    flex-shrink: 0; /* Prevents slides from shrinking */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.querySelector('[data-section-id="{{ section.id }}"]');
+  if (!container) return;
+
+  const slider = container.querySelector('.announcement-bar__slider');
+  const slides = slider.querySelectorAll('.announcement-bar__slide');
+  const loop = container.getAttribute('data-loop') === 'true';
+  // Speed is in seconds, convert to milliseconds for setInterval
+  const speed = parseInt(container.getAttribute('data-speed'), 10) * 1000;
+
+  if (slides.length <= 1) {
+    return; // Don't start the slider if there's only one or zero slides
+  }
+
+  let currentIndex = 0;
+
+  function goToNextSlide() {
+    currentIndex++;
+
+    // If it's the last slide
+    if (currentIndex >= slides.length) {
+      if (loop) {
+        currentIndex = 0; // Go back to the first slide
+      } else {
+        clearInterval(slideInterval); // Stop the rotation if not looping
+        return;
+      }
+    }
+
+    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+  }
+
+  const slideInterval = setInterval(goToNextSlide, speed);
+});
+</script>
 
 {% schema %}
 {
   "name": "Announcement Bar",
+  "max_blocks": 5, // You can change the max number of announcements
   "settings": [
-    {
-      "type": "text",
-      "id": "announcement_text",
-      "label": "Announcement Text",
-      "default": "Welcome to our store! Free shipping on orders over $50."
-    },
     {
       "type": "color",
       "id": "background_color",
       "label": "Background Color",
-      "default": "#000000ff"
+      "default": "#000000"
     },
     {
       "type": "color",
       "id": "text_color",
       "label": "Text Color",
       "default": "#ffffff"
+    },
+    {
+      "type": "checkbox",
+      "id": "loop_announcements",
+      "label": "Loop announcements",
+      "default": true,
+      "info": "If checked, announcements will rotate continuously."
+    },
+    {
+      "type": "range",
+      "id": "rotation_speed",
+      "label": "Rotation speed",
+      "min": 2,
+      "max": 10,
+      "step": 1,
+      "unit": "s",
+      "default": 4,
+      "info": "Time in seconds between announcements."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "announcement",
+      "name": "Announcement",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Announce something new!"
+        }
+      ]
     }
   ],
   "presets": [
     {
       "name": "Announcement Bar",
-      "category": "Header"
+      "category": "Header",
+      "blocks": [
+        {
+          "type": "announcement",
+          "settings": {
+            "text": "Welcome to our store!"
+          }
+        },
+        {
+          "type": "announcement",
+          "settings": {
+            "text": "Free shipping on orders over $50"
+          }
+        }
+      ]
     }
   ]
 }
 {% endschema %}
-
-<style>
-.announcement-bar {
-  width: 100vw;
-  height: 30px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-}
-</style>
