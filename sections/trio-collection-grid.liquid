@@ -4,6 +4,26 @@
     background-color: #fff;
   }
 
+  /* NEW: Section Header Styles */
+  .trio-collection-grid__header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .trio-collection-grid__section-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+
+  .trio-collection-grid__section-subheading {
+    font-size: 1.1rem;
+    color: #555;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  /* --- End of new styles --- */
+
   .trio-collection-grid__container {
     max-width: 1200px;
     margin: 0 auto;
@@ -17,7 +37,7 @@
     display: block;
     text-decoration: none;
     overflow: hidden;
-    aspect-ratio: 3 / 4; /* Maintains a consistent vertical shape */
+    aspect-ratio: 3 / 4;
   }
 
   .trio-collection-grid__image {
@@ -97,20 +117,36 @@
     .trio-collection-grid__title {
       font-size: 2rem;
     }
+    .trio-collection-grid__section-title {
+        font-size: 1.8rem;
+    }
   }
 </style>
 
 <div class="trio-collection-grid">
+  {% if section.settings.section_title != blank or section.settings.section_subheading != blank %}
+    <div class="trio-collection-grid__header">
+      {% if section.settings.section_title != blank %}
+        <h2 class="trio-collection-grid__section-title">{{ section.settings.section_title | escape }}</h2>
+      {% endif %}
+      {% if section.settings.section_subheading != blank %}
+        <p class="trio-collection-grid__section-subheading">{{ section.settings.section_subheading | escape }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
   <div class="trio-collection-grid__container">
     {% for i in (1..3) %}
       {%- assign collection_setting = 'collection_' | append: i -%}
       {%- assign subheading_setting = 'subheading_' | append: i -%}
       {%- assign button_text_setting = 'button_text_' | append: i -%}
+      {%- assign button_link_setting = 'button_link_' | append: i -%}
 
       {%- assign collection = collections[section.settings[collection_setting]] -%}
+      {%- assign custom_link = section.settings[button_link_setting] -%}
       
       {% if collection != blank %}
-        <a href="{{ collection.url }}" class="trio-collection-grid__item">
+        <a href="{{ custom_link | default: collection.url }}" class="trio-collection-grid__item">
           {%- assign image = collection.image | default: collection.products.first.image -%}
           <div class="trio-collection-grid__image" style="background-image: url('{{ image | image_url: width: 800 }}');"></div>
           <div class="trio-collection-grid__overlay"></div>
@@ -137,6 +173,21 @@
   "settings": [
     {
       "type": "header",
+      "content": "Section Header"
+    },
+    {
+      "type": "text",
+      "id": "section_title",
+      "label": "Heading",
+      "default": "Featured Collections"
+    },
+    {
+      "type": "text",
+      "id": "section_subheading",
+      "label": "Subheading (Optional)"
+    },
+    {
+      "type": "header",
       "content": "Column 1"
     },
     {
@@ -155,6 +206,12 @@
       "id": "button_text_1",
       "label": "Button Text",
       "default": "Shop now"
+    },
+    {
+      "type": "url",
+      "id": "button_link_1",
+      "label": "Button Link (Optional)",
+      "info": "Leave blank to link to the collection page."
     },
     {
       "type": "header",
@@ -178,6 +235,12 @@
       "default": "Shop now"
     },
     {
+      "type": "url",
+      "id": "button_link_2",
+      "label": "Button Link (Optional)",
+      "info": "Leave blank to link to the collection page."
+    },
+    {
       "type": "header",
       "content": "Column 3"
     },
@@ -197,6 +260,12 @@
       "id": "button_text_3",
       "label": "Button Text",
       "default": "Shop now"
+    },
+    {
+      "type": "url",
+      "id": "button_link_3",
+      "label": "Button Link (Optional)",
+      "info": "Leave blank to link to the collection page."
     }
   ],
   "presets": [
