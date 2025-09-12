@@ -1,0 +1,208 @@
+<style>
+  .trio-collection-grid {
+    padding: 50px 20px;
+    background-color: #fff;
+  }
+
+  .trio-collection-grid__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .trio-collection-grid__item {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    overflow: hidden;
+    aspect-ratio: 3 / 4; /* Maintains a consistent vertical shape */
+  }
+
+  .trio-collection-grid__image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .trio-collection-grid__item:hover .trio-collection-grid__image {
+    transform: scale(1.05);
+  }
+
+  .trio-collection-grid__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 50%);
+  }
+
+  .trio-collection-grid__content {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    right: 30px;
+    color: #ffffff;
+    z-index: 2;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+  }
+
+  .trio-collection-grid__title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 0 0 5px;
+  }
+
+  .trio-collection-grid__subheading {
+    font-size: 1.1rem;
+    margin: 0 0 15px;
+    font-weight: 300;
+  }
+
+  .trio-collection-grid__button {
+    font-size: 1rem;
+    font-weight: 500;
+    display: inline-block;
+    position: relative;
+    padding-bottom: 5px;
+  }
+
+  .trio-collection-grid__button::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: #ffffff;
+    transform: scaleX(1);
+    transition: transform 0.3s ease;
+  }
+
+  .trio-collection-grid__item:hover .trio-collection-grid__button::after {
+    transform: scaleX(0.8);
+  }
+
+  @media (max-width: 768px) {
+    .trio-collection-grid__container {
+      grid-template-columns: 1fr;
+    }
+    .trio-collection-grid__title {
+      font-size: 2rem;
+    }
+  }
+</style>
+
+<div class="trio-collection-grid">
+  <div class="trio-collection-grid__container">
+    {% for i in (1..3) %}
+      {%- assign collection_setting = 'collection_' | append: i -%}
+      {%- assign subheading_setting = 'subheading_' | append: i -%}
+      {%- assign button_text_setting = 'button_text_' | append: i -%}
+
+      {%- assign collection = collections[section.settings[collection_setting]] -%}
+      
+      {% if collection != blank %}
+        <a href="{{ collection.url }}" class="trio-collection-grid__item">
+          {%- assign image = collection.image | default: collection.products.first.image -%}
+          <div class="trio-collection-grid__image" style="background-image: url('{{ image | image_url: width: 800 }}');"></div>
+          <div class="trio-collection-grid__overlay"></div>
+          <div class="trio-collection-grid__content">
+            <h2 class="trio-collection-grid__title">{{ collection.title }}</h2>
+            <p class="trio-collection-grid__subheading">{{ section.settings[subheading_setting] }}</p>
+            <span class="trio-collection-grid__button">{{ section.settings[button_text_setting] }}</span>
+          </div>
+        </a>
+      {% else %}
+        <div class="trio-collection-grid__item" style="background-color: #f4f4f4; display: flex; align-items: center; justify-content: center;">
+          <div style="text-align: center;">
+            <p>Select a collection in the editor</p>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Trio Collection Grid",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Column 1"
+    },
+    {
+      "type": "collection",
+      "id": "collection_1",
+      "label": "Collection"
+    },
+    {
+      "type": "text",
+      "id": "subheading_1",
+      "label": "Subheading",
+      "default": "Elevated tailoring"
+    },
+    {
+      "type": "text",
+      "id": "button_text_1",
+      "label": "Button Text",
+      "default": "Shop now"
+    },
+    {
+      "type": "header",
+      "content": "Column 2"
+    },
+    {
+      "type": "collection",
+      "id": "collection_2",
+      "label": "Collection"
+    },
+    {
+      "type": "text",
+      "id": "subheading_2",
+      "label": "Subheading",
+      "default": "Adventurous styles"
+    },
+    {
+      "type": "text",
+      "id": "button_text_2",
+      "label": "Button Text",
+      "default": "Shop now"
+    },
+    {
+      "type": "header",
+      "content": "Column 3"
+    },
+    {
+      "type": "collection",
+      "id": "collection_3",
+      "label": "Collection"
+    },
+    {
+      "type": "text",
+      "id": "subheading_3",
+      "label": "Subheading",
+      "default": "Treasured essentials"
+    },
+    {
+      "type": "text",
+      "id": "button_text_3",
+      "label": "Button Text",
+      "default": "Shop now"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Trio Collection Grid"
+    }
+  ]
+}
+{% endschema %}
