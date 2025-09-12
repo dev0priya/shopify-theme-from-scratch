@@ -1,0 +1,173 @@
+<style>
+  .marquee-section {
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .marquee__content {
+    display: flex;
+    width: fit-content;
+    animation: marquee-animation var(--animation-duration, 40s) linear infinite;
+    will-change: transform;
+  }
+
+  .marquee-section:hover .marquee__content {
+    animation-play-state: paused; /* Pauses on hover */
+  }
+
+  .marquee__item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0 1.5rem;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  /* --- NEW: Size variants --- */
+  .marquee-size--small {
+    padding: 8px 0;
+    font-size: 0.9rem;
+  }
+  .marquee-size--small .marquee__item img {
+    height: 20px;
+  }
+
+  .marquee-size--medium {
+    padding: 15px 0;
+    font-size: 1rem;
+  }
+  .marquee-size--medium .marquee__item img {
+    height: 25px;
+  }
+
+  .marquee-size--large {
+    padding: 25px 0;
+    font-size: 1.2rem;
+  }
+  .marquee-size--large .marquee__item img {
+    height: 32px;
+  }
+  /* --- End of new styles --- */
+
+  @keyframes marquee-animation {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+</style>
+
+<div 
+  class="marquee-section marquee-size--{{ section.settings.bar_size }}" 
+  style="
+    background-color: {{ section.settings.background_color }}; 
+    color: {{ section.settings.text_color }};
+    --animation-duration: {{ section.settings.speed }}s;
+  "
+>
+  <div class="marquee__content">
+    {%- comment -%} The content is duplicated to create a seamless loop {%- endcomment -%}
+    {% for i in (1..2) %}
+      {% if section.blocks.size > 0 %}
+        {% for block in section.blocks %}
+          <div class="marquee__item">
+            <span>{{ block.settings.text | escape }}</span>
+            {% if block.settings.image != blank %}
+              <img 
+                src="{{ block.settings.image | image_url: height: 64 }}" 
+                alt="{{ block.settings.image.alt | default: block.settings.text | escape }}"
+                loading="lazy"
+              >
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        {%- comment -%} Show placeholder content if no blocks are added {%- endcomment -%}
+        {% for i in (1..10) %}
+        <div class="marquee__item">
+          <span>Your announcement here</span>
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Marquee",
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#f4f4f4"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#333333"
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "s",
+      "label": "Scrolling Speed",
+      "default": 40,
+      "info": "Higher number means slower speed."
+    },
+    {
+      "type": "select",
+      "id": "bar_size",
+      "label": "Bar Size (Thickness & Font)",
+      "options": [
+        {
+          "value": "small",
+          "label": "Thin (Small Font)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (Medium Font)"
+        },
+        {
+          "value": "large",
+          "label": "Thick (Large Font)"
+        }
+      ],
+      "default": "medium"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "announcement",
+      "name": "Announcement",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Free shipping on orders over $250"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Icon / Image (Optional)"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Marquee"
+    }
+  ]
+}
+{% endschema %}
