@@ -1,0 +1,156 @@
+<style>
+  .custom-text-section {
+    padding: 50px 20px;
+    width: 100%;
+    box-sizing: border-box;
+    /* The background and text colors will be applied inline */
+  }
+
+  .custom-text__wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* Alignment Classes */
+  .custom-text__wrapper.align--left {
+    text-align: left;
+  }
+  .custom-text__wrapper.align--center {
+    text-align: center;
+  }
+  .custom-text__wrapper.align--right {
+    text-align: right;
+  }
+
+  .custom-text__heading {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 15px;
+    line-height: 1.2;
+    /* Color will be inherited from the parent */
+  }
+
+  .custom-text__subheading {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-top: 0;
+    margin-bottom: 20px;
+    /* Removed specific color to inherit from parent */
+    opacity: 0.85; /* Using opacity for a subtle difference */
+    line-height: 1.4;
+  }
+
+  .custom-text__description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    /* Removed specific color to inherit from parent */
+  }
+
+  .custom-text__description p {
+    margin-top: 0;
+  }
+
+  @media (max-width: 768px) {
+    .custom-text__heading {
+      font-size: 2.2rem;
+    }
+    .custom-text__subheading {
+      font-size: 1.2rem;
+    }
+    .custom-text-section {
+      padding: 30px 15px;
+    }
+  }
+</style>
+
+<div 
+  class="custom-text-section" 
+  style="background-color: {{ section.settings.background_color }}; color: {{ section.settings.text_color }};"
+>
+  <div class="custom-text__wrapper align--{{ section.settings.text_alignment }}">
+    
+    {% if section.settings.heading != blank %}
+      <h2 class="custom-text__heading">{{ section.settings.heading | escape }}</h2>
+    {% endif %}
+
+    {% if section.settings.subheading != blank %}
+      <p class="custom-text__subheading">{{ section.settings.subheading | escape }}</p>
+    {% endif %}
+
+    {% if section.settings.description != blank %}
+      <div class="custom-text__description">
+        {{ section.settings.description }}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Custom Text",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Your Heading Here"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "A catchy subheading to grab attention"
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description",
+      "default": "<p>Use this space to tell a story about your brand or products. You can make text <strong>bold</strong> or <em>italic</em>.</p>"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text Alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center",
+      "info": "Select the alignment for all the text in this section."
+    },
+    {
+      "type": "header",
+      "content": "Color Scheme"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#333333"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Text"
+    }
+  ]
+}
+{% endschema %}
